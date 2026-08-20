@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WorksiteGuard — Worker & Camera Client</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/client.css">
+</head>
+<body>
+  <!-- Site-wide Alert Floating Banner -->
+  <div id="siteAlertBanner" class="site-alert-banner hidden">
+    <div class="banner-content">
+      <span class="banner-icon" id="bannerIcon">🚨</span>
+      <div class="banner-text">
+        <strong id="bannerTitle">SITE THREAT DETECTED</strong>
+        <p id="bannerMsg">Hazard alert broadcast from peer camera</p>
+      </div>
+    </div>
+    <button id="bannerDismissBtn" class="banner-dismiss" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <div class="wrap">
+    <header class="client-header">
+      <div>
+        <h1>WORKSITE<span>GUARD</span></h1>
+        <p class="sub">Shared perception & camera mesh client</p>
+      </div>
+      <button id="soundToggleBtn" class="sound-toggle-btn" title="Toggle Alert Audio">
+        <span id="soundIcon">🔊</span> <span id="soundText">Sound ON</span>
+      </button>
+    </header>
+
+    <section class="connect-panel">
+      <label class="field">
+        <span>Worker / Device Name</span>
+        <input id="nameInput" type="text" placeholder="e.g. excavator-cam or worker-bob" autocomplete="off">
+      </label>
+      <button id="startBtn">Start streaming & join network</button>
+    </section>
+
+    <div class="preview-wrap">
+      <video id="preview" autoplay playsinline muted></video>
+      <span id="statusDot" class="status-dot"></span>
+      <div class="preview-meta">
+        <span id="previewTag" class="preview-tag">Camera standby</span>
+      </div>
+    </div>
+    <p id="statusText" class="status-text">Not connected to worksite mesh</p>
+
+    <!-- Shared Perception Network Panel -->
+    <section class="perception-card" id="perceptionCard">
+      <div class="perception-card-header">
+        <div class="perception-title">
+          <span class="mesh-dot"></span>
+          <span>SHARED PERCEPTION MESH</span>
+        </div>
+        <span id="siteStatusBadge" class="status-badge safe">SAFE</span>
+      </div>
+
+      <div class="perception-stats-grid">
+        <div class="stat-box">
+          <span class="stat-num" id="statCameras">0</span>
+          <span class="stat-lbl">Cameras</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statPeople">0</span>
+          <span class="stat-lbl">Workers</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statVehicles">0</span>
+          <span class="stat-lbl">Vehicles</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statHazards">0</span>
+          <span class="stat-lbl">Hazards</span>
+        </div>
+      </div>
+
+      <div class="peer-cameras-section">
+        <span class="section-subtitle">Active Cameras on Site</span>
+        <div id="peerCamerasList" class="peer-cameras-list">
+          <span class="no-peers">No peer cameras connected</span>
+        </div>
+      </div>
+
+      <div class="site-threats-section">
+        <span class="section-subtitle">Recent Site Alerts</span>
+        <div id="clientAlertsList" class="client-alerts-list">
+          <p class="empty-alerts">No site threats reported yet.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <canvas id="capture" style="display:none"></canvas>
+  <script src="/static/client.js"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phone Tracker</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #111; color: #eee; padding: 24px; text-align: center; }
+  h1 { font-size: 20px; }
+  #status { margin: 20px 0; font-size: 16px; }
+  .ok { color: #4caf50; }
+  .bad { color: #f44336; }
+  input { font-size: 16px; padding: 8px; width: 200px; text-align: center; border-radius: 6px; border: 1px solid #444; background: #222; color: #eee; }
+  button { font-size: 16px; padding: 10px 24px; margin-top: 12px; border-radius: 8px; border: none; background: #4caf50; color: white; }
+  #readout { margin-top: 24px; font-size: 13px; text-align: left; background: #1a1a1a; padding: 12px; border-radius: 8px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <h1>📍 Device Tracker</h1>
+  <div>
+    <input id="deviceId" placeholder="Name this device (e.g. Alice-Phone)">
+  </div>
+  <button id="startBtn">Start Sharing</button>
+  <div id="status">Not started</div>
+  <pre id="readout"></pre>
+
+<script>
+let ws;
+let deviceId = "";
+let lastHeading = null;
+
+function connect() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${proto}://${location.host}/ws/device`);
+  ws.onopen = () => setStatus("Connected — waiting for GPS fix...", true);
+  ws.onclose = () => { setStatus("Disconnected, retrying in 2s...", false); setTimeout(connect, 2000); };
+  ws.onerror = () => setStatus("Connection error", false);
+}
+
+function setStatus(msg, ok) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = ok ? "ok" : "bad";
+}
+
+function send(payload) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(payload));
+  }
+}
+
+function startTracking() {
+  deviceId = document.getElementById("deviceId").value.trim() || ("phone-" + Math.floor(Math.random() * 1000));
+  connect();
+
+  // --- GPS ---
+  if (!navigator.geolocation) {
+    setStatus("Geolocation not supported on this browser", false);
+    return;
+  }
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      const c = pos.coords;
+      const payload = {
+        device_id: deviceId,
+        type: "phone",
+        lat: c.latitude,
+        lon: c.longitude,
+        accuracy_m: c.accuracy,
+        speed_mps: c.speed,
+        gps_heading: c.heading, // heading-from-motion, only valid while moving; null otherwise
+        heading: lastHeading !== null ? lastHeading : c.heading,
+        timestamp: Date.now() / 1000,
+        online: true
+      };
+      send(payload);
+      setStatus(`Sharing — lat ${c.latitude.toFixed(6)}, lon ${c.longitude.toFixed(6)} (±${c.accuracy.toFixed(0)}m)`, true);
+      document.getElementById("readout").textContent = JSON.stringify(payload, null, 2);
+    },
+    (err) => setStatus("GPS error: " + err.message, false),
+    { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
+  );
+
+  // --- Compass / heading (device orientation) ---
+  function handleOrientation(e) {
+    // webkitCompassHeading (iOS) is already true-north heading, 0-360
+    // absolute alpha (Android, 'deviceorientationabsolute') is compass heading too
+    let heading = null;
+    if (e.webkitCompassHeading !== undefined) {
+      heading = e.webkitCompassHeading;
+    } else if (e.absolute && e.alpha !== null) {
+      heading = 360 - e.alpha; // convert to compass heading
+    }
+    if (heading !== null && !isNaN(heading)) {
+      lastHeading = heading;
+    }
+  }
+
+  if (typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function") {
+    // iOS 13+ requires explicit permission, must be triggered by user gesture (this button click)
+    DeviceOrientationEvent.requestPermission().then((state) => {
+      if (state === "granted") {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      }
+    }).catch(console.error);
+  } else {
+    window.addEventListener("deviceorientationabsolute", handleOrientation, true);
+    window.addEventListener("deviceorientation", handleOrientation, true);
+  }
+}
+
+document.getElementById("startBtn").addEventListener("click", startTracking);
+</script>
+</body>
+</html>

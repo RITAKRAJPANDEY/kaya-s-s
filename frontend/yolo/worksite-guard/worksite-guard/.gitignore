@@ -1,0 +1,22 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# TLS private keys & certificates (generated locally via gen_cert.sh)
+*.pem
+*.key
+*.crt
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

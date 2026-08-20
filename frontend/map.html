@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Device Map</title>
+<style>
+  html, body, #map { height: 100%; margin: 0; padding: 0; }
+  #panel {
+    position: absolute; top: 10px; left: 10px; z-index: 10;
+    background: rgba(20,20,20,0.85); color: #eee; padding: 10px 14px;
+    border-radius: 8px; font-family: sans-serif; font-size: 13px; max-width: 260px;
+  }
+  #panel div { margin: 2px 0; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .online { background: #4caf50; }
+  .offline { background: #888; }
+</style>
+</head>
+<body>
+<div id="panel"><b>Devices</b><div id="deviceList">Connecting...</div></div>
+<div id="map"></div>
+
+<script>
+let map;
+const markers = {}; // device_id -> {marker, arrowMarker}
+let autoFit = true;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 18,           // start zoomed in, like Google Maps street-level
+    maxZoom: 21,         // Google Maps allows very close zoom in supported areas
+    center: { lat: 0, lng: 0 },
+    mapTypeId: "roadmap",
+    tilt: 0,
+  });
+
+  // stop auto-fitting once the user manually pans/zooms, so we don't yank their view
+  map.addListener("dragstart", () => autoFit = false);
+  map.addListener("zoom_changed", () => { /* keep autoFit as-is on programmatic zoom */ });
+
+  connectViewer();
+}
+
+function connectViewer() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${proto}://${location.host}/ws/viewer`);
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === "snapshot") {
+      msg.devices.forEach(updateDevice);
+      fitToDevices();
+    } else if (msg.type === "update") {
+      updateDevice(msg.device);
+    } else if (msg.type === "offline") {
+      if (markers[msg.device_id]) {
+        markers[msg.device_id].marker.setIcon(makeIcon(0, true));
+      }
+    }
+    renderList();
+  };
+
+  ws.onclose = () => setTimeout(connectViewer, 2000);
+}
+
+function makeIcon(heading, offline) {
+  // A simple rotated triangle/arrow SVG marker showing facing direction
+  const color = offline ? "#888" : "#1a73e8";
+  return {
+    path: "M 0,-10 L 6,8 L 0,4 L -6,8 Z", // arrow pointing "up" (north) by default
+    fillColor: color,
+    fillOpacity: 1,
+    strokeColor: "#ffffff",
+    strokeWeight: 1.5,
+    scale: 1.4,
+    rotation: heading || 0,
+    anchor: new google.maps.Point(0, 0),
+  };
+}
+
+function updateDevice(d) {
+  if (d.lat == null || d.lon == null) return;
+  const pos = { lat: d.lat, lng: d.lon };
+  const heading = (d.heading !== null && d.heading !== undefined) ? d.heading : 0;
+
+  if (!markers[d.device_id]) {
+    const marker = new google.maps.Marker({
+      position: pos,
+      map: map,
+      icon: makeIcon(heading, false),
+      title: d.device_id,
+    });
+    const infowindow = new google.maps.InfoWindow();
+    marker.addListener("click", () => {
+      infowindow.setContent(
+        `<b>${d.device_id}</b><br>lat: ${d.lat.toFixed(6)}<br>lon: ${d.lon.toFixed(6)}` +
+        (d.accuracy_m ? `<br>accuracy: ±${Math.round(d.accuracy_m)}m` : "") +
+        (heading ? `<br>heading: ${Math.round(heading)}°` : "")
+      );
+      infowindow.open(map, marker);
+    });
+    markers[d.device_id] = { marker, data: d };
+  } else {
+    markers[d.device_id].marker.setPosition(pos);
+    markers[d.device_id].marker.setIcon(makeIcon(heading, d.online === false));
+    markers[d.device_id].data = d;
+  }
+}
+
+function fitToDevices() {
+  const ids = Object.keys(markers);
+  if (ids.length === 0) return;
+  if (ids.length === 1) {
+    map.setCenter(markers[ids[0]].marker.getPosition());
+    return;
+  }
+  const bounds = new google.maps.LatLngBounds();
+  ids.forEach((id) => bounds.extend(markers[id].marker.getPosition()));
+  map.fitBounds(bounds);
+}
+
+function renderList() {
+  const el = document.getElementById("deviceList");
+  el.innerHTML = "";
+  Object.entries(markers).forEach(([id, m]) => {
+    const d = m.data;
+    const dotClass = d.online === false ? "offline" : "online";
+    const row = document.createElement("div");
+    row.innerHTML = `<span class="dot ${dotClass}"></span>${id}` +
+      (d.accuracy_m ? ` <small>(±${Math.round(d.accuracy_m)}m)</small>` : "");
+    el.appendChild(row);
+  });
+}
+</script>
+
+<!--
+  Replace YOUR_API_KEY_HERE with a Google Maps JavaScript API key
+  (enable "Maps JavaScript API" in Google Cloud Console, billing must be enabled
+  but the free monthly credit comfortably covers personal/hobby use).
+-->
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap">
+</script>
+</body>
+</html>

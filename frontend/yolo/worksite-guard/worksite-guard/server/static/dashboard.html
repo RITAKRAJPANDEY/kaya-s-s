@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WorksiteGuard — Live Monitor & Shared Perception</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+  <!-- Global Site Hazard Warning Banner -->
+  <div id="globalHazardBanner" class="global-hazard-banner hidden">
+    <div class="hazard-banner-inner">
+      <span class="hazard-icon" id="globalHazardIcon">🚨</span>
+      <div class="hazard-banner-text">
+        <strong id="globalHazardTitle">SITE-WIDE THREAT ACTIVE</strong>
+        <span id="globalHazardMsg">Hazard detected on camera network</span>
+      </div>
+    </div>
+    <button id="dismissHazardBtn" class="hazard-dismiss" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">&#9670;</span>
+      <span class="brand-name">WORKSITE<span class="brand-accent">GUARD</span></span>
+      <span class="brand-tag">PERCEPTION HUB</span>
+    </div>
+    <div class="status-strip">
+      <span id="clientCount" class="stat">0 <small>CAMERAS ONLINE</small></span>
+      <span id="workerCount" class="stat">0 <small>WORKERS DETECTED</small></span>
+      <span id="hazardCount" class="stat">0 <small>ACTIVE HAZARDS</small></span>
+      <button id="dashSoundBtn" class="dash-sound-btn" title="Toggle Alarm Audio">🔊 Sound ON</button>
+      <span id="clock" class="stat clock-stat"></span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="feed-grid" id="feedGrid">
+      <div class="empty-state" id="emptyState">
+        <p>No cameras connected to the worksite mesh.</p>
+        <p class="hint">Open <code>/client</code> on any phone or run <code>pi_client.py</code> to connect a camera feed.</p>
+      </div>
+    </section>
+
+    <aside class="alerts-panel">
+      <div class="alerts-header">
+        <h2>Site Threat Log</h2>
+        <span id="activeThreatCountBadge" class="threat-badge safe">0 active</span>
+      </div>
+      <div id="alertsList" class="alerts-list">
+        <p class="alerts-empty">No threats detected across site.</p>
+      </div>
+    </aside>
+  </main>
+
+  <template id="tileTemplate">
+    <article class="tile">
+      <div class="tile-frame">
+        <span class="bracket tl"></span><span class="bracket tr"></span>
+        <span class="bracket bl"></span><span class="bracket br"></span>
+        <img class="tile-img" alt="live camera feed">
+        <canvas class="tile-canvas"></canvas>
+        <div class="tile-overlay">
+          <span class="live-dot"></span>
+          <span class="tile-name"></span>
+        </div>
+      </div>
+      <div class="tile-meta">
+        <span class="tile-detections"></span>
+        <span class="tile-threat-badge"></span>
+      </div>
+    </article>
+  </template>
+
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>

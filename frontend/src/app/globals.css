@@ -1,0 +1,156 @@
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --bg-main: #fcfdfc;
+  --bg-card: #ffffff;
+  --bg-card-muted: #f6faf7;
+  --bg-green-tint: #ecfdf5;
+  --bg-green-pill: #d1fae5;
+  --border-light: #e5ede6;
+  --border-green: #6ee7b7;
+  --border-green-subtle: #a7f3d0;
+  
+  --emerald-dark: #064e3b;
+  --emerald-primary: #059669;
+  --emerald-vibrant: #10b981;
+  --emerald-light: #34d399;
+  --sage-accent: #3f6e56;
+  --mint-bg: #f0fdf4;
+  
+  --text-main: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-green: #047857;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(5, 150, 105, 0.04);
+  --shadow-md: 0 4px 16px -2px rgba(6, 78, 59, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+  --shadow-lg: 0 12px 30px -4px rgba(6, 78, 59, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.02);
+  --shadow-green-glow: 0 0 20px rgba(16, 185, 129, 0.25);
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Minimalist Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+/* Leaflet Overrides for Pristine White & Green Theme */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background-color: #f8faf8 !important;
+  z-index: 1;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: var(--text-main) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border-light) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 4px;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
+.leaflet-bar {
+  border: 1px solid var(--border-light) !important;
+  box-shadow: var(--shadow-md) !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background-color: #ffffff !important;
+  color: var(--emerald-dark) !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  transition: all 0.2s ease;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--bg-green-tint) !important;
+  color: var(--emerald-primary) !important;
+}
+
+/* Pulse animation for live online markers */
+@keyframes greenPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.pulse-active {
+  animation: greenPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes radarSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-sweep {
+  animation: radarSweep 4s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
