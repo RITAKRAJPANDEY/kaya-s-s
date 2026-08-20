@@ -1,0 +1,29 @@
+STANDARD OPERATING PROCEDURE: PORTABLE LADDER SAFETY (SOP-SAF-004)
+APEX BUILDERS GROUP - SAFETY COMPLIANCE DIVISION
+VERSION: 3.2 | DATE: FEBRUARY 2026
+
+1. PURPOSE & SCOPE
+This Standard Operating Procedure (SOP) defines the mandatory inspection, setup, and usage requirements for all portable step ladders and extension ladders on Apex construction projects.
+
+2. LADDER SELECTION & MATERIAL REQUIREMENTS
+2.1 Duty Rating: Only Type IA (Extra Heavy Duty, 300 lbs capacity) or Type IAA (Special Duty, 375 lbs capacity) ladders are authorized for construction operations. Type II (Medium Duty) and Type III (Light Duty) household ladders are prohibited on site.
+2.2 Material Compatibility:
+    - Non-conductive fiberglass ladders MUST be used when working within 10 feet of exposed electrical circuits, wiring, transformers, or energized equipment.
+    - Aluminum and metal ladders are strictly prohibited in electrical work zones and near power distribution points.
+    - Wooden ladders are not permitted unless specifically manufactured and certified to ANSI A14.1 standards.
+
+3. SETUP & POSITIONING STANDARDS
+3.1 The 4-to-1 Rule: For every 4 feet of ladder working height (vertical distance to the upper support point), place the ladder base 1 foot out horizontally from the vertical wall/structure.
+3.2 Upper Landing Extension: Extension ladders providing access to an upper landing surface, platform, or roof must extend at least 3 feet (0.9 meters / 36 inches) above the upper landing point.
+3.3 Tie-off & Securing: Extension ladders must be securely tied off at the top rungs to a rigid structure or anchored at the base to prevent slipping, shifting, or displacement.
+3.4 Surface Stability: Ladders must only be set up on stable, level, dry surfaces. Do not set ladders on uneven ground, gravel mounds, wooden blocks, boxes, or scaffolds to gain additional height.
+
+4. SAFE CLIMBING AND WORK PRACTICES
+4.1 Three-Point Contact: Workers must maintain three points of contact at all times while ascending or descending ladders (two feet and one hand, or two hands and one foot).
+4.2 Belt Buckle Rule: Keep your belt buckle (center of torso) positioned between the side rails at all times. Do not overreach to the side; climb down and reposition the ladder.
+4.3 Top Step Prohibition: Never stand, sit, or step on the top cap or top rung of a step ladder. Do not climb higher than the second rung from the top on extension ladders.
+4.4 Carrying Tools: Do not carry heavy tools or materials while climbing. Use a tool belt, hoist line, or bucket to raise equipment after reaching the work position.
+
+5. INSPECTION & MAINTENANCE
+5.1 Daily Pre-Use Inspection: Inspect for cracked or bent side rails, broken or oily rungs, missing non-slip rubber feet, damaged spreader bars, or loose rivets.
+5.2 Damaged Ladders: Any defective ladder must be immediately removed from service, tagged with a red "DANGER - DO NOT USE" tag, and removed from the active work area.

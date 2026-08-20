@@ -1,0 +1,36 @@
+MANDATORY PERSONAL PROTECTIVE EQUIPMENT (PPE) POLICY
+POLICY REF: POL-PPE-2026-REV4
+APEX BUILDERS GROUP SAFETY & HEALTH MANUAL
+
+1. POLICY OVERVIEW
+All workers, supervisors, trade subcontractors, engineers, and authorized visitors must wear mandatory Personal Protective Equipment (PPE) at all times within the active construction boundary. Zero tolerance is enforced for non-compliance.
+
+2. MINIMUM MANDATORY PPE (THE FIVE ESSENTIALS)
+2.1 Head Protection (Hard Hat):
+    - Must comply with ANSI/ISEA Z89.1 (Type 1, Class E or Class G).
+    - Hard hats must be worn forward-facing with chin straps fastened when working at height, in windy conditions, or near crane pick zones.
+    - Helmets must be free from cracks, structural deformation, and chemical solvent damage. Stickers must not obscure inspection areas.
+2.2 Eye and Face Protection:
+    - High-impact safety glasses conforming to ANSI Z87.1+ with integrated side shields are required 100% of the time.
+    - Full-face shields and safety goggles must be worn during cutting, grinding, welding chipping, chemical mixing, or high-pressure washing.
+2.3 High-Visibility Apparel:
+    - High-visibility safety vests, shirts, or jackets conforming to ANSI/ISEA 107 Class 2 (daytime) or Class 3 (night shifts and traffic control).
+    - Color must be fluorescent yellow-green or fluorescent orange-red with retroreflective silver striping.
+2.4 Foot Protection:
+    - Safety boots complying with ASTM F2413 or EN ISO 20345 standard.
+    - Must feature steel or composite protective toe caps, puncture-resistant soles, and minimum 6-inch ankle support. Soft shoes, sneakers, and sandals are strictly forbidden.
+2.5 Hand Protection:
+    - Task-specific safety gloves must be worn whenever handling sharp materials, chemicals, rebar, sheet metal, or power tools. Cut-level A4 or higher required for steel framing and glass handling.
+
+3. SPECIALIZED PPE REQUIREMENTS
+3.1 Hearing Protection:
+    - Earplugs or earmuffs rated with Noise Reduction Rating (NRR) of at least 25 dB must be worn in zones where noise levels exceed 85 dBA (e.g., jackhammers, concrete saws, generators).
+3.2 Respiratory Protection:
+    - NIOSH-approved N95 or P100 half-mask respirators are required during dry concrete cutting, drywall sanding, silica-generating operations, or toxic fume exposure.
+3.3 Welding PPE:
+    - Approved auto-darkening welding helmet with shade filter 9 to 13, fire-resistant leather sleeves, and split-cowhide welding gloves.
+
+4. PPE ENFORCEMENT & DISCIPLINARY POLICY
+- First Offense: Formal verbal safety warning and immediate compliance requirement.
+- Second Offense: Written safety violation notice and 1-day site suspension.
+- Third Offense: Permanent revocation of site access and removal from project.

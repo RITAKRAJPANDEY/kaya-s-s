@@ -1,0 +1,62 @@
+{
+  "store_name": "fileSearchStores/kayaconstructionkb-px4alna27a2v",
+  "store_display_name": "Kaya Construction Knowledge Base",
+  "documents": {
+    "construction_safety_manual_part1.pdf": {
+      "file_hash": "5e6092a31b0da4e96fccb6ac14c41b42bd201fa5d33564255bbe48ff51c86380",
+      "file_size": 63854564,
+      "chunks_count": 1,
+      "ingested_at": "2026-08-20T06:14:43.431854+00:00"
+    },
+    "construction_safety_manual_part2.pdf": {
+      "file_hash": "9ac9f498911f0259142d5cbabd12d0ad107d65150390f71e842644274069d83e",
+      "file_size": 63435051,
+      "chunks_count": 1,
+      "ingested_at": "2026-08-20T06:15:33.535305+00:00"
+    },
+    "heavy_equipment_sop.txt": {
+      "file_hash": "9cbf4ad2c114af1fc7ede8f04f3a8aa87561fb59c52fd6f4c8237eee0f50ea61",
+      "file_size": 2187,
+      "chunks_count": 3,
+      "ingested_at": "2026-08-20T06:15:35.071498+00:00"
+    },
+    "ladder_safety_sop.txt": {
+      "file_hash": "3ccf11a7d60b774f478dd4b4a6430280658952adfa31ff3268c13c1a59a3390d",
+      "file_size": 2955,
+      "chunks_count": 3,
+      "ingested_at": "2026-08-20T06:15:36.691560+00:00"
+    },
+    "ppe_compliance_policy.txt": {
+      "file_hash": "19a6d2c2ed720db35a22db8f959bb2e4fc8e60932249a8b53b87fe49450b4d9d",
+      "file_size": 2757,
+      "chunks_count": 3,
+      "ingested_at": "2026-08-20T06:15:38.243433+00:00"
+    },
+    "scaffolding_safety_sop.txt": {
+      "file_hash": "60eac5104b66a942e0f197c51bd7b9481d83fa2b4be322b8d05cd5e4638c525e",
+      "file_size": 2775,
+      "chunks_count": 3,
+      "ingested_at": "2026-08-20T06:15:39.879900+00:00"
+    },
+    "site_safety_manual.txt": {
+      "file_hash": "48dba5ec81d08bcf62ee4249034b5c509493871bd11d748d55072eea09dccef0",
+      "file_size": 3358,
+      "chunks_count": 4,
+      "ingested_at": "2026-08-20T06:15:41.468654+00:00"
+    },
+    "worker_manual_construction_eng.pdf": {
+      "file_hash": "5595fdaf8a25df93bff444fa54eac7d5e68b671a7e49c62c57ca7da487490a48",
+      "file_size": 25676496,
+      "chunks_count": 3,
+      "ingested_at": "2026-08-20T06:16:16.058677+00:00"
+    }
+  },
+  "last_ingested": 1787203857.44704,
+  "docling_vector_store": {
+    "index_path": "knowledge/vector_store.json",
+    "embedding_model": "gemini-embedding-001",
+    "document_count": 8,
+    "chunk_count": 21,
+    "last_updated": "2026-08-20T06:16:30.832960+00:00"
+  }
+}

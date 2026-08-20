@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kaya — Job Site Safety Copilot</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <!-- Three.js for 3D pose viewer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="brand-title">Kaya Copilot</span>
+            <span class="live-dot"></span>
+          </div>
+          <div class="brand-tagline">Real-Time Job Site Safety AI & Knowledge Assistant</div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="frame-mode-toggle" id="frameModeToggle">
+          <button class="mode-tab-btn active" id="btnModeTemporal">🎞️ Temporal</button>
+          <button class="mode-tab-btn" id="btnModeSingle">🖼️ Single Frame</button>
+        </div>
+        <div class="provider-badges">
+          <span class="badge badge-vision"><span class="badge-dot"></span><span id="pillVisionLabel">Vision: Gemini</span></span>
+          <span class="badge badge-stt"><span class="badge-dot"></span><span id="pillSTTLabel">STT: Gemini</span></span>
+          <span class="badge badge-tts"><span class="badge-dot"></span><span id="pillTTSLabel">TTS: Sarvam</span></span>
+          <span class="badge badge-rag"><span class="badge-dot"></span><span id="pillRAGLabel">RAG: Docling</span></span>
+        </div>
+        <button class="btn-reset" id="btnReset">↺ Reset</button>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main-layout">
+
+      <!-- Left: Video & Computer Vision Telemetry -->
+      <section class="video-panel">
+        <div class="panel-header">
+          <span class="panel-title">Live Safety Vision Stream</span>
+          <div class="stream-telemetry">
+            <span class="tel-pill objects" id="telObjects">0 objects</span>
+            <span class="tel-pill hazards" id="telHazards">0 hazards</span>
+            <span class="tel-pill fps" id="telFps">-- fps</span>
+            <span class="tel-pill depth-stat" id="telDepthStats" style="color:#7c3aed;background:#faf5ff;border-color:#e9d5ff;">Depth V2</span>
+          </div>
+        </div>
+
+        <!-- View mode tabs -->
+        <div class="view-mode-nav" id="viewModeNav">
+          <button class="view-tab active" data-mode="all">🎯 Combined</button>
+          <button class="view-tab" data-mode="raw">📹 Normal</button>
+          <button class="view-tab" data-mode="pose">👁️ 3D Pose</button>
+          <button class="view-tab" data-mode="depth">🌊 Depth Map</button>
+          <button class="view-tab" data-mode="ppe">🦺 PPE</button>
+          <button class="view-tab" data-mode="objects">🔨 Objects</button>
+        </div>
+
+        <!-- Video stage -->
+        <div class="video-viewport" id="videoViewport">
+
+          <!-- Primary MJPEG stream (Combined / Normal / Depth / PPE / Objects / Pose) -->
+          <img id="videoFeed" src="/api/video_feed?mode=all" class="stream-img" alt="Live stream" />
+
+          <!-- Interactive 3D Three.js Pose Canvas -->
+          <canvas id="poseCanvas" class="stream-img hidden"></canvas>
+
+          <!-- Pose Sub-mode Toggle (shown in pose mode) -->
+          <div id="poseControls" class="pose-controls-bar hidden">
+            <button class="pose-sub-btn active" id="btnPoseStream">📹 Stream Overlay</button>
+            <button class="pose-sub-btn" id="btnPose3D">🌐 3D Spatial Canvas</button>
+          </div>
+
+          <!-- HUD overlays -->
+          <div class="video-hud">
+            <div class="hud-pill hud-listening hidden" id="hudListening"><span class="hud-dot"></span> Listening...</div>
+            <div class="hud-pill hud-thinking hidden" id="hudThinking"><span class="spinner"></span> Thinking...</div>
+            <div class="hud-pill hud-speaking hidden" id="hudSpeaking">🔊 Speaking...</div>
+          </div>
+        </div>
+
+        <div class="video-footer">
+          <span class="engine-info" id="engineInfo">YOLO26 · Depth Anything V2 · Docling RAG · Gemini VLM</span>
+          <button class="btn-sm" id="btnReconnect">↺ Reconnect</button>
+        </div>
+      </section>
+
+      <!-- Right: Copilot Chat & RAG Knowledge Retrieval -->
+      <section class="chat-panel">
+        <div class="chat-header">
+          <span class="panel-title">Kaya Safety Copilot</span>
+          <span class="msg-count" id="msgCount">0 messages</span>
+        </div>
+
+        <div class="chips-bar">
+          <button class="chip" data-query="Are all workers wearing hardhats and safety vests?">🦺 Check PPE</button>
+          <button class="chip" data-query="What are the ladder setup rules according to our safety manual?">🪜 Ladder SOP</button>
+          <button class="chip" data-query="Are there any hazards or tripping risks in the area?">⚠️ Hazard Scan</button>
+          <button class="chip" data-query="What does the documentation say about mobile crane operation?">🏗️ Crane Rules</button>
+        </div>
+
+        <div class="conv-feed" id="convFeed">
+          <div class="welcome-card" id="welcomeCard">
+            <div class="icon">🏗️</div>
+            <h3>Kaya Safety Copilot</h3>
+            <p>Ask real-time questions about the job site or safety manuals using voice or text.</p>
+            <div class="hints">
+              <div class="hint-row">🎙️ Hold <kbd>Space</kbd> or click Push to Talk to speak</div>
+              <div class="hint-row">📖 Knowledge Base queries auto-retrieve Docling SOP chunks</div>
+              <div class="hint-row">🌊 Depth Map tab renders real-time 3D metric distance gradients</div>
+              <div class="hint-row">👁️ 3D Pose tab visualizes posture angles & spatial joints</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input">
+          <button class="btn-ptt" id="btnPTT" title="Hold to record. Release to send.">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+            <span id="pttLabel">Push to Talk</span>
+            <kbd>Space</kbd>
+          </button>
+
+          <form class="text-form" id="textForm">
+            <input type="text" class="text-input" id="textInput" placeholder="Ask about the job site or safety rules..." autocomplete="off" />
+            <button type="submit" class="btn-send" id="btnSend">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+  </div>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

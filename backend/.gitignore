@@ -1,0 +1,60 @@
+# Python environment
+.venv/
+venv/
+env/
+ENV/
+bin/
+lib/
+include/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.nosexy
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Model weights and test media
+*.pt
+weights/
+test_videos/
+
+# Local databases, sidecar journals, and logs
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+data/events.db
+*.log
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Environment variables & secrets
+.env
+.env.*
+
+# Test snapshots & scratch files
+*.jpg
+*.png
+scratch/

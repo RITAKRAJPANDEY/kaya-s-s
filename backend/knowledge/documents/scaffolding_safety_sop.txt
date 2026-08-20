@@ -1,0 +1,32 @@
+STANDARD OPERATING PROCEDURE: SUPPORTED SCAFFOLDING SAFETY (SOP-SAF-008)
+APEX BUILDERS GROUP - CONSTRUCTION SAFETY DIRECTIVE
+VERSION: 2.1 | DATE: JANUARY 2026
+
+1. SCOPE & GENERAL MANDATES
+Supported scaffolding erection, modification, dismantling, and daily inspection must adhere strictly to OSHA 29 CFR 1926 Subpart L and Apex Site Standards.
+
+2. COMPETENT PERSON & TAGGING SYSTEM
+2.1 All scaffolds must be erected, altered, moved, and dismantled only under the direct supervision of a designated Scaffold Competent Person.
+2.2 Mandatory Color Tagging System at access ladders:
+    - GREEN TAG: "SAFE FOR USE" - Scaffold is fully compliant, complete guardrails, fully planked, inspected within past 24 hours.
+    - YELLOW TAG: "CAUTION / RESTRICTED USE" - Scaffold is modified or requires 100% harness tie-off at all times.
+    - RED TAG: "DANGER - DO NOT USE" - Scaffold is incomplete, damaged, or undergoing erection/dismantling. Never access red-tagged scaffolds.
+
+3. STRUCTURAL REQUIREMENTS & PLANKING
+3.1 Foundation: Scaffold legs, posts, and frames must bear on base plates and mudsills resting on firm, consolidated ground or concrete slabs. Do not use bricks, concrete blocks, or loose scrap wood to level legs.
+3.2 Planking: Platforms must be fully planked between front uprights and guardrail supports with scaffold-grade lumber (2x10 nominal) or manufactured aluminum/plywood scaffold planks.
+3.3 Maximum gap between planks must not exceed 1 inch (2.5 cm).
+3.4 Overlap: Scaffold planks must overlap by at least 12 inches (30 cm) or be cleated and secured against uplift.
+3.5 Overhang: Planks must extend over end supports by at least 6 inches (15 cm) and no more than 12 inches (30 cm).
+
+4. GUARDRAILS AND FALL PROTECTION
+4.1 Guardrails are mandatory on all open sides and ends of scaffolding platforms 6 feet (1.8 meters) or more above a lower level.
+4.2 Guardrail Dimensions:
+    - Top rail: 38 to 45 inches above the working platform surface, capable of withstanding a 200 lb downward/outward force.
+    - Midrail: Approximately midway between the top rail and the platform (20 to 24 inches), capable of withstanding a 150 lb force.
+    - Toeboard: Minimum 3.5 inches high along all open edges to prevent tools and debris from falling, withstanding 50 lb force.
+4.3 Cross-bracing can only substitute for a top rail if the crossing point is 38 to 48 inches high, or for a midrail if the crossing point is 20 to 30 inches high.
+
+5. LOADING AND ELECTRICAL CLEARANCES
+5.1 Never exceed the intended working load or manufacturer rated load capacity (Light Duty: 25 lbs/sq ft; Medium Duty: 50 lbs/sq ft; Heavy Duty: 75 lbs/sq ft).
+5.2 Maintain a minimum clearance of 10 feet from insulated power lines under 300V, and 10 feet + 0.4 inches per kV for lines over 300V.

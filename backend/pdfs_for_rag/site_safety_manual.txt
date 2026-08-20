@@ -1,0 +1,35 @@
+APEX BUILDERS GROUP - GENERAL SITE SAFETY MANUAL (REVISION 2026.1)
+DOCUMENT ID: ABG-SSM-2026
+EFFECTIVE DATE: JANUARY 15, 2026
+
+SECTION 1: GENERAL SITE RULES & ACCESS
+1.1 All personnel, contractors, and visitors entering the construction perimeter must complete the mandatory Site Safety Induction.
+1.2 Working hours are 07:00 to 18:00. Any night work or weekend shifts require a written Permit to Work (PTW).
+1.3 Smoking, vaping, alcohol, and non-prescribed controlled substances are strictly prohibited across the entire project perimeter.
+1.4 Cell phone usage is prohibited while operating machinery, walking through designated transit corridors, or working at elevation.
+
+SECTION 2: WORKING AT HEIGHT & FALL PROTECTION
+2.1 Fall protection is mandatory for any work where a worker can fall 6 feet (1.8 meters) or more to a lower level.
+2.2 Acceptable fall protection systems include:
+    a) Guardrail systems with top rails at 42 inches (+/- 3 inches), midrails at 21 inches, and toeboards at least 3.5 inches high.
+    b) Personal Fall Arrest Systems (PFAS), including a full-body harness, shock-absorbing lanyard or self-retracting lifeline (SRL), and an approved anchor point rated for at least 5,000 lbs (22.2 kN) per attached worker.
+    c) Safety net systems installed within 30 feet below the working level.
+2.3 Floor openings, roof hatches, and floor penetrations greater than 2 inches in diameter must be securely covered with load-bearing covers marked "HOLE" or "COVER" or protected by standard guardrails.
+2.4 When working within 6 feet of an unprotected edge, a 100% tie-off policy is strictly enforced.
+
+SECTION 3: ELECTRICAL SAFETY & LOCKOUT/TAGOUT (LOTO)
+3.1 All temporary power distribution boards must feature Ground Fault Circuit Interrupters (GFCI) or 30mA RCD protection.
+3.2 Only certified electricians are permitted to access breaker panels, switchboards, or perform live electrical troubleshooting.
+3.3 Minimum approach distance to overhead power lines up to 50kV is 10 feet (3.0 meters). For voltages exceeding 50kV, add 4 inches for every additional 10kV.
+3.4 Lockout/Tagout (LOTO) procedures must be applied before servicing any energized equipment, mechanical systems, or high-pressure lines. Each worker must affix their personal padlock and danger tag.
+
+SECTION 4: EXCAVATION AND TRENCHING SAFETY
+4.1 Any trench or excavation measuring 5 feet (1.5 meters) or deeper must be protected by an approved protective system: sloping, benching, shoring, or trench shields/boxes.
+4.2 Daily pre-entry inspections must be conducted by a Designated Competent Person prior to worker entry and after any rain event or seismic vibration.
+4.3 Spoil piles and heavy equipment must be placed at least 2 feet (0.6 meters) away from the edge of the excavation.
+4.4 Ladders or stairways must be provided in trenches 4 feet or deeper, located within 25 feet (7.6 meters) of lateral travel distance for all workers.
+
+SECTION 5: EMERGENCY RESPONSE AND INCIDENT REPORTING
+5.1 In the event of a medical emergency, call the Site Emergency Dispatch at 555-0199 immediately.
+5.2 First aid stations and automated external defibrillators (AEDs) are located in the Site Management Trailer and Ground Floor Tool Crib.
+5.3 All near-misses, minor injuries, and property damage incidents must be reported to the Site Safety Officer within 2 hours of occurrence.

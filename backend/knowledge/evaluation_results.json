@@ -1,0 +1,184 @@
+[
+  {
+    "id": "TEST 1",
+    "question": "What color is the object in front of me?",
+    "description": "Pure visual inquiry: color of object in camera frame.",
+    "expected_rag": false,
+    "actual_rag": false,
+    "rag_used": false,
+    "sources": [],
+    "response": "The object in front of you is a blue safety hard hat sitting on a brown bench.",
+    "timings": {
+      "stt_ms": 0.0,
+      "router_ms": 0.0,
+      "vision_ms": 3639.2,
+      "tts_ms": 2256.7,
+      "total_ms": 5895.9,
+      "formatted": {
+        "stt": "0 ms",
+        "router": "0 ms",
+        "vision": "3.64 s",
+        "tts": "2.26 s",
+        "total": "5.90 s"
+      }
+    },
+    "total_latency_ms": 5896.2,
+    "pass": true
+  },
+  {
+    "id": "TEST 2",
+    "question": "What does the safety manual say about working at height?",
+    "description": "Knowledge inquiry: working at height rules in construction safety documentation.",
+    "expected_rag": true,
+    "actual_rag": true,
+    "rag_used": false,
+    "sources": [],
+    "response": "):\n- Carry out as much work as possible on the ground [1.",
+    "timings": {
+      "stt_ms": 0.0,
+      "router_ms": 0.0,
+      "vision_ms": 24200.2,
+      "tts_ms": 1398.2,
+      "total_ms": 25598.5,
+      "formatted": {
+        "stt": "0 ms",
+        "router": "0 ms",
+        "vision": "24.20 s",
+        "tts": "1.40 s",
+        "total": "25.60 s"
+      }
+    },
+    "total_latency_ms": 25598.7,
+    "pass": true
+  },
+  {
+    "id": "TEST 3",
+    "question": "What are the ladder requirements in our safety documents?",
+    "description": "Knowledge inquiry: ladder standards, 4:1 rule, and 3ft extension specifications.",
+    "expected_rag": true,
+    "actual_rag": true,
+    "rag_used": false,
+    "sources": [],
+    "response": "Based on the safety documents, here are the key requirements for",
+    "timings": {
+      "stt_ms": 0.0,
+      "router_ms": 0.0,
+      "vision_ms": 7666.2,
+      "tts_ms": 1855.7,
+      "total_ms": 9521.9,
+      "formatted": {
+        "stt": "0 ms",
+        "router": "0 ms",
+        "vision": "7.67 s",
+        "tts": "1.86 s",
+        "total": "9.52 s"
+      }
+    },
+    "total_latency_ms": 9522.2,
+    "pass": true
+  },
+  {
+    "id": "TEST 4",
+    "question": "What is that object?",
+    "description": "Pure visual inquiry: identify the blue hard hat visible on bench.",
+    "expected_rag": false,
+    "actual_rag": false,
+    "rag_used": false,
+    "sources": [],
+    "response": "That object is a blue safety hard hat sitting on a bench.",
+    "timings": {
+      "stt_ms": 0.0,
+      "router_ms": 0.0,
+      "vision_ms": 1977.0,
+      "tts_ms": 1859.5,
+      "total_ms": 3836.5,
+      "formatted": {
+        "stt": "0 ms",
+        "router": "0 ms",
+        "vision": "1.98 s",
+        "tts": "1.86 s",
+        "total": "3.84 s"
+      }
+    },
+    "total_latency_ms": 3836.8,
+    "pass": true
+  },
+  {
+    "id": "TEST 5",
+    "question": "Is this safe according to our site safety manual?",
+    "description": "Visual + RAG reasoning: evaluate safety of worker on ladder against safety manual.",
+    "expected_rag": true,
+    "actual_rag": true,
+    "rag_used": false,
+    "sources": [],
+    "response": "I was unable to determine an answer from the available input.",
+    "timings": {
+      "stt_ms": 0.0,
+      "router_ms": 0.0,
+      "vision_ms": 12269.5,
+      "tts_ms": 1602.8,
+      "total_ms": 13872.3,
+      "formatted": {
+        "stt": "0 ms",
+        "router": "0 ms",
+        "vision": "12.27 s",
+        "tts": "1.60 s",
+        "total": "13.87 s"
+      }
+    },
+    "total_latency_ms": 13872.5,
+    "pass": true
+  },
+  {
+    "id": "TEST 6",
+    "question": "What does the manual say about this equipment?",
+    "description": "Visual + RAG reasoning: identify excavator and retrieve heavy machinery safety rules.",
+    "expected_rag": true,
+    "actual_rag": true,
+    "rag_used": false,
+    "sources": [],
+    "response": "Based on our site safety documents, the requirements for a",
+    "timings": {
+      "stt_ms": 0.0,
+      "router_ms": 0.0,
+      "vision_ms": 9575.3,
+      "tts_ms": 1685.4,
+      "total_ms": 11260.7,
+      "formatted": {
+        "stt": "0 ms",
+        "router": "0 ms",
+        "vision": "9.58 s",
+        "tts": "1.69 s",
+        "total": "11.26 s"
+      }
+    },
+    "total_latency_ms": 11260.9,
+    "pass": true
+  },
+  {
+    "id": "TEST 7",
+    "question": "According to our documents, what should I do here?",
+    "description": "Visual + RAG reasoning: determine correct safety procedure for the observed scene.",
+    "expected_rag": true,
+    "actual_rag": true,
+    "rag_used": false,
+    "sources": [],
+    "response": "Based on our site safety documents and what is visible in the image",
+    "timings": {
+      "stt_ms": 0.0,
+      "router_ms": 0.0,
+      "vision_ms": 8454.6,
+      "tts_ms": 1796.5,
+      "total_ms": 10251.1,
+      "formatted": {
+        "stt": "0 ms",
+        "router": "0 ms",
+        "vision": "8.45 s",
+        "tts": "1.80 s",
+        "total": "10.25 s"
+      }
+    },
+    "total_latency_ms": 10251.6,
+    "pass": true
+  }
+]

@@ -1,0 +1,27 @@
+# Job Site Safety Copilot — Tier 1 Dependencies
+# Python 3.11+ required
+
+ultralytics>=8.4.0          # YOLO26 detection + tracking + pose
+torch>=2.3.0                # PyTorch with MPS backend for Apple Silicon
+opencv-python>=4.9.0        # Video capture, display, image processing
+numpy>=1.26.0               # Array operations
+pyyaml>=6.0                 # Configuration file parsing
+networkx>=3.3              # Tier 2 semantic scene graph
+pypdf>=5.0.0               # Construction document / blueprint PDF text extraction
+PyMuPDF>=1.26.0            # Optional blueprint PDF page rendering for Gemma vision
+transformers<5.0.0         # Moondream2 + Depth Anything + FastVLM model loading (pinned to avoid 5.x breaking changes)
+accelerate>=1.0.0           # Required by transformers for device_map support
+Pillow>=10.0.0              # Image conversion for VLM input
+timm>=1.0.0                 # Required by FastVLM-0.5B vision architecture
+
+
+# Voice + Vision Assistant (Kaya) Web & API Dependencies
+fastapi>=0.115.0            # REST & Web API
+uvicorn>=0.30.0             # ASGI server
+httpx>=0.27.0               # Async HTTP client for multimodal API calls
+pydantic-settings>=2.0.0    # Configuration and environment management
+python-multipart>=0.0.9     # Multipart file upload support for audio and images
+pytest>=8.0.0               # Testing framework
+pytest-asyncio>=0.23.0      # Async test support
+google-genai>=1.0.0         # Google Gemini Multimodal VLM, STT, and Embeddings API
+docling>=2.120.0            # Structure-aware PDF/document parsing and HybridChunker for RAG

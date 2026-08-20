@@ -1,0 +1,30 @@
+STANDARD OPERATING PROCEDURE: HEAVY MACHINERY & EARTHMOVING EQUIPMENT (SOP-EQ-012)
+APEX BUILDERS GROUP - FLEET OPERATIONS & SAFETY
+VERSION: 4.0 | DATE: JANUARY 2026
+
+1. OPERATOR QUALIFICATION & AUTHORIZATION
+1.1 Only certified, licensed, and site-authorized operators possessing a valid operating permit may operate heavy machinery (excavators, wheel loaders, backhoes, telehandlers, and skid steers).
+1.2 Seatbelts are mandatory 100% of the time whenever the engine is running or machinery is in motion.
+
+2. EXCLUSION ZONES AND SPOTTERS
+2.1 Swing Radius & Blind Spot Exclusion Zone: A minimum 360-degree exclusion zone of 10 feet (3.0 meters) must be barricaded with delineator cones or caution tape around hydraulic excavators and cranes during active work.
+2.2 Dedicated Spotters: A trained spotter wearing a high-visibility Class 3 vest and equipped with a two-way radio is required:
+    - Whenever operating within 15 feet of active pedestrian walkways or structures.
+    - During all reverse movements if the rear view is partially obscured.
+    - When working adjacent to open trenches, overhead electrical lines, or during tandem lifting.
+2.3 Hand Signals: Standard universal hand signals must be agreed upon between spotter and operator prior to commencing work. If the operator loses sight of the spotter at any second, operation must immediately STOP.
+
+3. PRE-OPERATION CHECKLIST & INSPECTION
+3.1 Daily circle-check inspection must be logged before beginning each shift, including:
+    - Hydraulic lines, fluid levels, and leak checks.
+    - Backup alarms, headlights, strobe beacons, and horn functionality.
+    - Tires, tracks, lug nuts, and braking systems.
+    - Quick-coupler safety pin engagement on excavator buckets and attachments.
+
+4. REFUELLING AND PARKING PROCEDURES
+4.1 Engine must be shut down, key removed, and parking brake engaged during all refuelling operations. No open flames or hot work within 50 feet of refuelling stations.
+4.2 When parking or unattended:
+    - Lower all buckets, forks, and blades flat to the ground.
+    - Engage mechanical parking brake.
+    - Chock wheels if parked on any incline.
+    - Switch off master battery isolator switch.

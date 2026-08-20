@@ -1,0 +1,249 @@
+# ============================================================
+# Job Site Safety Copilot — Configuration
+# ============================================================
+
+perspective: "egocentric"       # "third_person" | "egocentric"
+
+# --- Model Paths & Thresholds ---
+models:
+  general:
+    path: "yolo11n.pt"           # High-speed COCO object detector (person, vehicles, tools, items)
+    confidence: 0.30
+    iou: 0.45
+    classes: null               # null = all COCO classes
+  ppe:
+    # Pretrained PPE model: Hugging Face yolo26n
+    path: "hf:yihong1120/Construction-Hazard-Detection:models/yolo26/pt/yolo26n.pt"
+    api_key: "N3msO9LsV6MgzZpFDe0D"
+    confidence: 0.30
+    iou: 0.45
+  pose:
+    path: "yolo26n-pose.pt"     # COCO keypoints
+    confidence: 0.40
+    run_every_n_frames: 3       # Pose runs every Nth frame to save compute
+  tool:
+    enabled: true
+    path: "yolov8s-worldv2.pt"   # YOLO-World open-vocabulary tool detector
+    confidence: 0.20            # Tuned for high recall on construction and hand tools
+    iou: 0.45
+    classes:
+      # ---------------- Hand Tools ----------------
+      - "claw hammer"
+      - "rubber mallet"
+      - "screwdriver"
+      - "adjustable wrench"
+      - "socket wrench set"
+      - "pliers"
+      - "wire cutters"
+      - "utility knife"
+      - "hand saw"
+      - "hacksaw"
+      - "measuring tape"
+      - "spirit level"
+      - "chisel"
+      - "hand file"
+      - "allen key set"
+      - "c-clamp"
+      - "pipe wrench"
+      - "putty knife"
+      - "hand trowel"
+      - "staple gun"
+      - "crowbar"
+      - "bolt cutters"
+
+      # ---------------- Power Tools & Equipment ----------------
+      - "cordless drill"
+      - "impact driver"
+      - "angle grinder"
+      - "circular saw"
+      - "reciprocating saw"
+      - "jigsaw"
+      - "table saw"
+      - "miter saw"
+      - "belt sander"
+      - "orbital sander"
+      - "nail gun"
+      - "jackhammer"
+      - "rotary hammer drill"
+      - "heat gun"
+      - "soldering iron"
+      - "bench grinder"
+      - "air compressor"
+      - "pressure washer"
+      - "chainsaw"
+      - "welding machine"
+      - "welding torch"
+      - "extension cord reel"
+      - "power strip"
+
+      # ---------------- Personal Protective Equipment (PPE) ----------------
+      - "hard hat"
+      - "safety vest"
+      - "safety glasses"
+      - "safety goggles"
+      - "face shield"
+      - "ear muffs"
+      - "ear plugs"
+      - "dust mask"
+      - "respirator mask"
+      - "work gloves"
+      - "cut-resistant gloves"
+      - "safety boots"
+      - "steel-toe boots"
+      - "knee pads"
+      - "safety harness"
+      - "welding helmet"
+      - "high-visibility jacket"
+
+      # ---------------- Site Infrastructure & Access ----------------
+      - "step ladder"
+      - "extension ladder"
+      - "scaffolding"
+      - "safety cone"
+      - "barricade"
+      - "caution tape"
+      - "guardrail"
+      - "warning sign"
+      - "toolbox"
+      - "tool cart"
+      - "storage bin"
+      - "bucket"
+      - "wheelbarrow"
+      - "dumpster"
+      - "dolly cart"
+      - "workbench"
+      - "shipping container"
+      - "port-a-potty"
+
+      # ---------------- Heavy Machinery & Vehicles ----------------
+      - "forklift"
+      - "excavator"
+      - "bulldozer"
+      - "backhoe loader"
+      - "cement mixer"
+      - "crane"
+      - "dump truck"
+      - "pickup truck"
+      - "skid steer loader"
+      - "road roller"
+      - "scissor lift"
+      - "boom lift"
+      - "concrete pump truck"
+      - "flatbed trailer"
+
+      # ---------------- Materials & Potential Hazards ----------------
+      - "exposed wire"
+      - "cinder block"
+      - "rebar"
+      - "gas cylinder"
+      - "propane tank"
+      - "fire extinguisher"
+      - "wooden pallet"
+      - "spill puddle"
+      - "sandbag"
+      - "lumber stack"
+      - "metal pipe"
+      - "concrete slab"
+      - "electrical panel"
+      - "open manhole"
+      - "debris pile"
+      - "sharp metal shard"
+      - "asbestos warning sign"
+
+      # ---------------- Common Everyday Workplace Objects ----------------
+      - "cell phone"
+      - "laptop"
+      - "clipboard"
+      - "water bottle"
+      - "backpack"
+      - "hard hat with attached radio"
+      - "two-way radio"
+      - "lunch box"
+      - "first aid kit"
+      - "coffee cup"
+      - "folding chair"
+      - "trash can"
+      - "broom"
+      - "dustpan"
+  depth:
+    enabled: true
+    path: "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf"
+    confidence: 0.40
+    run_every_n_frames: 3
+    is_metric: true
+    scale_factor: 1.0
+# --- Compute Device ---
+device:
+  preferred: "auto"             # auto | mps | cpu (auto uses Apple Silicon MPS if available)
+
+# --- Video Capture ---
+capture:
+  webcam_id: 0
+  resolution: [1280, 720]
+  max_fps: 30
+
+# --- Multi-Object Tracking ---
+tracking:
+  tracker: "bytetrack.yaml"     # High-speed ByteTrack
+  persist: true                 # Maintain IDs across frames
+
+# --- Attention / Escalation Logic ---
+escalation:
+  dwell_threshold_seconds: 4.0           # Time before escalation begins
+  gaze_angle_tolerance_degrees: 45.0     # ±degrees from hazard bearing to count as looking
+  escalation_cooldown_seconds: 10.0      # Don't re-escalate same hazard within this window
+  acknowledgment_gaze_duration_seconds: 0.5
+
+# --- Fall Detection ---
+fall_detection:
+  body_angle_threshold_degrees: 30.0     # Below this = horizontal posture
+  velocity_threshold_px_per_frame: 15.0  # Rapid vertical drop
+  confirmation_frames: 2                 # Both signals must agree
+  alert_cooldown_seconds: 15.0
+
+# --- PPE ---
+ppe:
+  standalone_alert: false       # Modulates severity of other hazards
+
+# --- Voice Alerts (TTS) ---
+alerts:
+  enabled: true
+  voice: "Samantha"             # macOS system voice
+  rates:
+    calm: 160
+    normal: 180
+    urgent: 220
+    critical: 240
+  cooldown_seconds: 5.0
+  max_concurrent: 1
+
+# --- Event Logging ---
+logging:
+  database_path: "data/events.db"
+  log_level: "INFO"
+
+# --- VLM Integration ---
+vlm:
+  enabled: true
+
+# --- Display / Overlay ---
+display:
+  show_fps: true
+  show_keypoints: true
+  show_gaze_lines: true
+  show_zones: true
+  show_alert_banner: true
+  show_track_ids: true
+  window_name: "Safety Copilot"
+  bbox_colors:
+    person: [0, 255, 0]        # Green
+    vehicle: [0, 255, 255]     # Yellow
+    ppe_ok: [0, 200, 0]        # Dark green
+    ppe_missing: [0, 0, 255]   # Red
+    hazard: [0, 0, 255]        # Red
+    zone: [0, 165, 255]        # Orange
+  zone_alpha: 0.25
+
+# --- Danger Zones ---
+zones:
+  default: []
