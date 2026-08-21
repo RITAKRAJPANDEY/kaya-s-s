@@ -137,15 +137,10 @@ This document details all hardware, software, AI inference, and telemetry pipeli
 
 ## 4. Deep-Dive: Unmounted & Disconnected Pipelines
 
-### 🔴 Pipeline 1: WorksiteGuard Multi-Camera Mesh Server (Port 8000)
+### 🟢 Pipeline 1: WorksiteGuard Multi-Camera Mesh Server (Port 8000)
 * **Location**: `frontend/yolo/worksite-guard/worksite-guard/server/main.py`
 * **What it does**: Provides a standalone YOLO camera mesh network where multiple phones/laptops can connect via WebSocket (`/ws/client`), stream raw camera frames, run YOLO hazard detection, and arbitrate blind-spot warnings on `/ws/dashboard`.
-* **Why it is disconnected**:
-  * The frontend component `WorksiteGuardDashboard.tsx` (on the `/reports` page) expects a WebSocket server on `ws://localhost:8000/ws/dashboard`.
-  * However, `start.bat` only starts:
-    1. `frontend` (Port 3001)
-    2. `backend/main.py` (Port 8001)
-  * Port 8000 is never launched by default, leaving the camera mesh tile on the `/reports` page in a connecting/disconnected state.
+* **Launch Config**: Now automatically launched by `start.bat` as step `[3/3]` on port `8000`.
 
 ### 🟡 Pipeline 2: SLAM Robot Odometry & LiDAR Mapping
 * **Location**: `frontend/src/components/SlamTelemetry.tsx` & `frontend/src/app/slam/page.tsx`
@@ -166,19 +161,15 @@ This document details all hardware, software, AI inference, and telemetry pipeli
 ## 5. How to Launch & Connect All Systems
 
 ### Default Execution (`start.bat`)
-Runs the primary 2 services:
+Now automatically starts all 3 core services:
 ```bat
-start "Kaya Frontend" cmd /k "cd frontend && npm run dev -- -p 3001"
-start "Kaya Backend"  cmd /k "cd backend && python -u main.py --no-display"
+[1/3] Frontend:        cd frontend && npm run dev -- -p 3001
+[2/3] Python AI Core:  cd backend && python -u main.py --no-display (Port 8001)
+[3/3] Worksite Mesh:   cd frontend/yolo/.../server && python main.py (Port 8000)
 ```
 * **Frontend UI**: `http://localhost:3001`
 * **Vision & AI Copilot**: `http://localhost:3001/vision`
 * **Geofence Command Map**: `http://localhost:3001/geofence`
+* **Safety Reports / Mesh**: `http://localhost:3001/reports`
 * **Mobile Broadcaster**: `http://<YOUR_LAN_IP>:3001/phone`
 
-### To Mount the Standalone WorksiteGuard YOLO Server (Optional Port 8000):
-```bash
-cd frontend/yolo/worksite-guard/worksite-guard/server
-python main.py
-```
-* Once running, the `/reports` page (`WorksiteGuardDashboard.tsx`) will immediately link to `ws://localhost:8000/ws/dashboard`.

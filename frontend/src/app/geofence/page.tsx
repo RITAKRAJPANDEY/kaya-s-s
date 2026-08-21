@@ -248,6 +248,16 @@ export default function GeofenceDashboardPage() {
     if (typeof window !== "undefined") {
       setHostUrl(window.location.host);
 
+      // Query dynamic LAN IP from server
+      fetch("/api/lan-ip")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ip && data.ip !== "127.0.0.1") {
+            setHostUrl(`${data.ip}:${data.port || 3001}`);
+          }
+        })
+        .catch(() => {});
+
       // Check if user has previously calibrated base station
       let hasSaved = false;
       try {

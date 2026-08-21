@@ -20,7 +20,12 @@ import {
   ShieldAlert,
   Lock,
   Layers,
-  HelpCircle
+  HelpCircle,
+  Camera,
+  Video,
+  VideoOff,
+  RefreshCw,
+  Eye
 } from "lucide-react";
 
 import { calculateDistanceMeters, calculateSpeedMps, formatSpeedKmh } from "@/lib/geo";
@@ -55,6 +60,13 @@ export default function PhoneBroadcasterPage() {
   const [packetsSent, setPacketsSent] = useState(0);
   const [isSecure, setIsSecure] = useState(true);
   const [hostIp, setHostIp] = useState("");
+
+  // Camera Capture & Streaming State
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [cameraFacing, setCameraFacing] = useState<"environment" | "user">("environment");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
 
   // Shared Perception & Threat Detection State
   const [activeDetections, setActiveDetections] = useState<ThreatDetection[]>([]);
@@ -183,34 +195,89 @@ export default function PhoneBroadcasterPage() {
     }
   };
 
-  const playBlindSpotChime = () => {
+  // Camera Management Methods
+  const startCamera = async (facing: "environment" | "user" = cameraFacing) => {
     try {
-      if (!audioCtxRef.current) {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        audioCtxRef.current = new AudioCtx();
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(t => t.stop());
       }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === "suspended") ctx.resume();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      const now = ctx.currentTime;
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(880, now);
-      osc.frequency.setValueAtTime(659, now + 0.12);
-      osc.frequency.setValueAtTime(880, now + 0.24);
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-      osc.start(now);
-      osc.stop(now + 0.45);
-    } catch (e) {}
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: facing,
+          width: { ideal: 480, max: 640 },
+          height: { ideal: 360, max: 480 },
+          frameRate: { ideal: 12, max: 20 }
+        },
+        audio: false
+      });
+      cameraStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
+      }
+      setIsCameraActive(true);
+      setStatus("Camera feed active & streaming to laptop");
+      setStatusType("active");
+    } catch (err: any) {
+      console.warn("Camera error:", err);
+      setStatus(`Camera error: ${err.message || "Permission denied"}`);
+      setStatusType("error");
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach(t => t.stop());
+      cameraStreamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const toggleCamera = () => {
+    if (isCameraActive) {
+      stopCamera();
+    } else {
+      startCamera();
+    }
+  };
+
+  const flipCamera = () => {
+    const nextFacing = cameraFacing === "environment" ? "user" : "environment";
+    setCameraFacing(nextFacing);
+    if (isCameraActive) {
+      startCamera(nextFacing);
+    }
   };
 
   const sendCurrentPose = () => {
     // Use fallback coordinates if GPS hasn't acquired yet (allows IMU-only streaming)
     const latToSend = latestLatRef.current !== null ? latestLatRef.current : (currentLat || 28.6139);
     const lonToSend = latestLonRef.current !== null ? latestLonRef.current : (currentLon || 77.2090);
+
+    // Grab latest camera frame if camera is active
+    let cameraFrameBase64: string | undefined = undefined;
+    if (isCameraActive && videoRef.current && captureCanvasRef.current) {
+      const v = videoRef.current;
+      const c = captureCanvasRef.current;
+      if (v.videoWidth > 0 && v.videoHeight > 0) {
+        const w = 480;
+        const h = Math.round((w * v.videoHeight) / v.videoWidth);
+        if (c.width !== w || c.height !== h) {
+          c.width = w;
+          c.height = h;
+        }
+        const ctx = c.getContext("2d", { willReadFrequently: false });
+        if (ctx) {
+          ctx.drawImage(v, 0, 0, w, h);
+          try {
+            cameraFrameBase64 = c.toDataURL("image/jpeg", 0.5);
+          } catch (e) {}
+        }
+      }
+    }
 
     const payload = {
       device_id: deviceId,
@@ -226,6 +293,7 @@ export default function PhoneBroadcasterPage() {
       pitch_deg: latestPitchRef.current,
       roll: latestRollRef.current,
       camera_hfov_deg: 68,
+      camera_frame_base64: cameraFrameBase64,
       detections: activeDetectionsRef.current,
       accuracy_m: latestAccuracyRef.current || (latestLatRef.current ? 5 : 50),
       speed_mps: latestSpeedRef.current,
@@ -249,25 +317,27 @@ export default function PhoneBroadcasterPage() {
       body: JSON.stringify(payload),
       keepalive: true
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
         const roundtrip = Date.now() - t0;
         setPingLatency(roundtrip);
+        setPacketsSent((p) => p + 1);
 
-        // Check if there are active blind-spot alerts for this device
+        // Check if there are active blind-spot alerts for this device (Visual only, no audio/vibration)
         if (data.blind_spot_alerts && data.blind_spot_alerts.length > 0) {
           setBlindSpotAlerts(data.blind_spot_alerts);
-          playBlindSpotChime();
-          if (typeof navigator !== "undefined" && navigator.vibrate) {
-            navigator.vibrate([200, 100, 200, 100, 300]);
-          }
         } else {
           setBlindSpotAlerts([]);
         }
       })
-      .catch(() => {});
-
-    setPacketsSent((p) => p + 1);
+      .catch((err) => {
+        console.warn("Telemetry transmission error:", err);
+        setStatus(`Transmission Notice: ${err.message || "Failed to reach server"}`);
+        setStatusType("error");
+      });
   };
 
   // High-accuracy GPS processor with 2D/3D Kinematic Kalman Filter
@@ -287,7 +357,6 @@ export default function PhoneBroadcasterPage() {
     latestAltitudeRef.current = filtered.alt;
 
     // Use optimal speed derived directly from Kalman velocity state vector
-    // Or fallback to hardware speed if reported and higher
     let speedMps = filtered.speedMps;
     if (c.speed !== null && c.speed !== undefined && c.speed > 0) {
       speedMps = Math.max(c.speed, filtered.speedMps);
@@ -303,7 +372,7 @@ export default function PhoneBroadcasterPage() {
     // Broadcast immediately on fix
     sendCurrentPose();
     
-    const accuracyLabel = filtered.accuracy <= 4 ? `🛰️ Kalman Satellite Lock (±${filtered.accuracy.toFixed(1)}m)` : filtered.accuracy <= 12 ? `Good (±${filtered.accuracy.toFixed(1)}m)` : `Coarse (±${Math.round(filtered.accuracy)}m)`;
+    const accuracyLabel = filtered.accuracy <= 4 ? `🛰️ Satellite Lock (±${filtered.accuracy.toFixed(1)}m)` : filtered.accuracy <= 12 ? `Good (±${filtered.accuracy.toFixed(1)}m)` : `Coarse (±${Math.round(filtered.accuracy)}m)`;
     setStatus(`Live GPS: ${filtered.lat.toFixed(6)}, ${filtered.lon.toFixed(6)} · ${accuracyLabel} · ${formatSpeedKmh(speedMps)}`);
     setStatusType("active");
   };
@@ -335,6 +404,7 @@ export default function PhoneBroadcasterPage() {
     }
 
     // High-Rate Background Broadcast Heartbeat (streams pose every 250ms)
+    sendCurrentPose();
     streamTickRef.current = setInterval(() => {
       sendCurrentPose();
     }, 250);
@@ -345,36 +415,26 @@ export default function PhoneBroadcasterPage() {
       return;
     }
 
-    // Always attempt high-accuracy GPS
+    // High-accuracy GPS with stable watchPosition (avoids continuous resetting)
     if (typeof window !== "undefined" && navigator.geolocation) {
-      // 1. Immediate high-precision watch
       const watchId = navigator.geolocation.watchPosition(
         (pos) => {
           processGpsFix(pos.coords);
         },
         (err) => {
-          console.warn("GPS error:", err.code, err.message);
-          let msg = err.message;
-          if (err.code === 1) msg = "Location permission denied. Allow location in browser settings.";
-          if (err.code === 2) msg = "Position unavailable. Turn on device GPS.";
-          if (err.code === 3) msg = "GPS satellite acquisition timed out. Retrying...";
-          setStatus(`GPS Notice: ${msg}`);
-          setStatusType("error");
+          console.warn("GPS notice:", err.code, err.message);
+          if (latestLatRef.current === null) {
+            let msg = err.message;
+            if (err.code === 1) msg = "Location permission denied. Allow location in browser.";
+            if (err.code === 2) msg = "Acquiring GPS fix...";
+            if (err.code === 3) msg = "Acquiring satellite lock...";
+            setStatus(`GPS Notice: ${msg}`);
+            setStatusType("error");
+          }
         },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 }
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
       );
       watchIdRef.current = watchId;
-
-      // 2. High-rate polling interval (every 400ms) to ensure continuous updates on throttled mobile OS
-      highRateIntervalRef.current = setInterval(() => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            processGpsFix(pos.coords);
-          },
-          () => {},
-          { enableHighAccuracy: true, maximumAge: 0, timeout: 3500 }
-        );
-      }, 400);
     } else {
       setStatus("Geolocation API not supported on this browser.");
       setStatusType("error");
@@ -749,6 +809,125 @@ export default function PhoneBroadcasterPage() {
                 <span>Roll: <b>{roll !== null ? `${roll}°` : "--"}</b></span>
               </div>
             </div>
+          </div>
+
+          {/* Live Mobile Camera Stream to Laptop */}
+          <div style={{
+            backgroundColor: "#f8fafc",
+            border: "1px solid var(--border-light)",
+            borderRadius: "var(--radius-md)",
+            padding: "14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Camera size={16} style={{ color: "var(--emerald-primary)" }} />
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-main)" }}>
+                    Live Video Feed Stream
+                  </div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                    {isCameraActive ? "Streaming video feed to laptop command center" : "Stream phone camera to laptop dashboard"}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {isCameraActive && (
+                  <button
+                    onClick={flipCamera}
+                    title="Switch Camera (Front/Back)"
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border-light)",
+                      backgroundColor: "#ffffff",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "11px",
+                      color: "var(--text-secondary)"
+                    }}
+                  >
+                    <RefreshCw size={12} />
+                    <span>Flip</span>
+                  </button>
+                )}
+                <button
+                  onClick={toggleCamera}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "7px 12px",
+                    borderRadius: "6px",
+                    border: "none",
+                    backgroundColor: isCameraActive ? "#ef4444" : "var(--emerald-primary)",
+                    color: "#ffffff",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  {isCameraActive ? (
+                    <>
+                      <VideoOff size={14} />
+                      <span>Stop Camera</span>
+                    </>
+                  ) : (
+                    <>
+                      <Video size={14} />
+                      <span>Turn On Camera</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Video Preview Canvas container */}
+            <div style={{
+              position: "relative",
+              width: "100%",
+              height: isCameraActive ? "200px" : "0px",
+              maxHeight: "240px",
+              backgroundColor: "#000000",
+              borderRadius: "8px",
+              overflow: "hidden",
+              transition: "height 0.2s ease-in-out",
+              display: isCameraActive ? "flex" : "none",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <video
+                ref={videoRef}
+                playsInline
+                autoPlay
+                muted
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+              <div style={{
+                position: "absolute",
+                top: "8px",
+                left: "8px",
+                backgroundColor: "rgba(0,0,0,0.6)",
+                padding: "3px 8px",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                fontSize: "10px",
+                color: "#10b981",
+                fontWeight: 700
+              }}>
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10b981" }} />
+                <span>LIVE STREAMING TO LAPTOP</span>
+              </div>
+            </div>
+            {/* Hidden Canvas for JPEG snapshot encoding */}
+            <canvas ref={captureCanvasRef} style={{ display: "none" }} />
           </div>
 
           {/* Simulation Toggle for Desktop Testing */}

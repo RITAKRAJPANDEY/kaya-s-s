@@ -144,6 +144,7 @@ export function processTelemetryPacket(rawPayload: any): {
     pitch,
     pitch_deg: pitch,
     camera_hfov_deg: hfov,
+    camera_frame_base64: rawPayload.camera_frame_base64 || existing?.camera_frame_base64,
     fov_polygon: fovPolygon,
     detections: projectedThreats,
     projected_threats: projectedThreats,

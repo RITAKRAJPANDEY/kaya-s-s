@@ -53,7 +53,7 @@ export interface ThreatLogItem {
 export default function WorksiteGuardDashboard() {
   const [mounted, setMounted] = useState<boolean>(false);
   const [clock, setClock] = useState<string>("");
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [filterLevel, setFilterLevel] = useState<string>("all");
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState<boolean>(false);
 
