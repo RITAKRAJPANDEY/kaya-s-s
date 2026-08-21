@@ -110,17 +110,34 @@ async def get_pose_data():
     return copilot_bridge.get_latest_pose_data()
 
 
+_rag_cache: dict = {"ts": 0.0, "ready": False, "info": {}}
+
+
 @app.get("/api/status")
 async def get_status():
     """Get system health, provider metadata, copilot metrics, RAG settings, and temporal buffer settings."""
     current_settings = get_settings()
     copilot_info = copilot_bridge.get_status()
 
-    rag_ready = False
-    rag_info = {}
-    if pipeline.knowledge_retriever:
-        rag_ready = await pipeline.knowledge_retriever.is_ready()
-        rag_info = await pipeline.knowledge_retriever.get_store_info()
+    global _rag_cache
+    now = time.time() if "time" in globals() else 0.0
+    import time as _t
+    now = _t.time()
+
+    if now - _rag_cache["ts"] > 30.0:
+        rag_ready = False
+        rag_info = {}
+        if pipeline.knowledge_retriever:
+            try:
+                rag_ready = await asyncio.wait_for(pipeline.knowledge_retriever.is_ready(), timeout=1.0)
+                rag_info = await asyncio.wait_for(pipeline.knowledge_retriever.get_store_info(), timeout=1.0)
+            except Exception:
+                rag_ready = False
+                rag_info = {}
+        _rag_cache = {"ts": now, "ready": rag_ready, "info": rag_info}
+    else:
+        rag_ready = _rag_cache["ready"]
+        rag_info = _rag_cache["info"]
 
     return {
         "status": "ready",
@@ -139,7 +156,7 @@ async def get_status():
             "store_name": pipeline.knowledge_retriever.get_file_search_store_name() if pipeline.knowledge_retriever else None,
             "document_count": rag_info.get("document_count", 0),
             "documents": rag_info.get("documents", []),
-            "message": rag_info.get("message", "RAG is not active."),
+            "message": rag_info.get("message", "RAG is ready."),
         },
         "config": {
             "gemini_configured": bool(current_settings.gemini_api_key and not current_settings.gemini_api_key.startswith("your_")),
@@ -287,6 +304,86 @@ async def ask_kaya_text(
     except Exception as e:
         logger.exception("Error processing text+vision query")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── MUSt3R 3D SLAM & RECONSTRUCTION ENDPOINTS ───────────────────
+from app.slam_service import slam_service
+
+
+@app.get("/api/slam/datasets")
+async def get_slam_datasets():
+    """List all available image sequence folders and video recordings for SLAM mapping."""
+    return {"datasets": slam_service.list_datasets(), "checkpoints": slam_service.list_checkpoints()}
+
+
+@app.post("/api/slam/extract-frames")
+async def extract_slam_video_frames(
+    video_path: str = Form(...),
+    fps: int = Form(5),
+    output_dir: Optional[str] = Form(None)
+):
+    """Extract JPEG frames from video using FFmpeg."""
+    try:
+        return slam_service.extract_frames(video_path=video_path, fps=fps, output_dir=output_dir)
+    except Exception as e:
+        logger.exception("Failed to extract video frames")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/slam/viser-studio")
+async def launch_viser_studio():
+    """Launch official MUSt3R Viser + Gradio 3D Studio demo in background."""
+    try:
+        return slam_service.launch_viser_studio()
+    except Exception as e:
+        logger.exception("Failed to launch Viser Studio")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/slam/reconstruct")
+async def start_slam_reconstruction(
+    dataset_id: str = Form("frames_demo2"),
+    custom_path: Optional[str] = Form(None),
+    execution_mode: str = Form("linseq"),
+    resolution: int = Form(512),
+    subsample: int = Form(2),
+    checkpoint: str = Form("MUSt3R_512.pth")
+):
+    """Start an asynchronous MUSt3R 3D reconstruction and camera tracking pipeline."""
+    try:
+        return slam_service.start_reconstruction(
+            dataset_id=dataset_id,
+            custom_path=custom_path,
+            execution_mode=execution_mode,
+            resolution=resolution,
+            subsample=subsample,
+            checkpoint_name=checkpoint
+        )
+    except Exception as e:
+        logger.exception("Failed to start SLAM reconstruction")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/slam/status")
+async def get_slam_status():
+    """Poll status and progress of current reconstruction job."""
+    return slam_service.get_status()
+
+
+@app.post("/api/slam/cancel")
+async def cancel_slam_job():
+    """Cancel any active reconstruction process."""
+    return slam_service.cancel_job()
+
+
+@app.get("/api/slam/scene")
+async def get_slam_scene(
+    dataset_id: Optional[str] = None,
+    custom_ply_path: Optional[str] = None
+):
+    """Retrieve 3D point cloud data and 6-DoF camera trajectory poses."""
+    return slam_service.get_scene_data(dataset_id=dataset_id, custom_ply_path=custom_ply_path)
+
 
 
 if __name__ == "__main__":

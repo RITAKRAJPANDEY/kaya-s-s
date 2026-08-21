@@ -11,6 +11,13 @@ interface Message {
 }
 
 export default function CopilotChatPanel() {
+  const getBackendUrl = () => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname || "localhost";
+      return `http://${host}:8001`;
+    }
+    return "http://localhost:8001";
+  };
   const visualizerCSS = `
     @keyframes pulse-ring {
       0% { transform: scale(0.8); opacity: 0.5; }
@@ -113,7 +120,7 @@ export default function CopilotChatPanel() {
       const formData = new FormData();
       formData.append("audio", audioBlob, "voice.wav");
 
-      const res = await fetch("http://localhost:8001/api/ask", {
+      const res = await fetch(`${getBackendUrl()}/api/ask`, {
         method: "POST",
         body: formData,
       });
@@ -173,7 +180,7 @@ export default function CopilotChatPanel() {
       formData.append("question", userMsg.text);
 
       // Call the backend text endpoint
-      const res = await fetch("http://localhost:8001/api/ask-text", {
+      const res = await fetch(`${getBackendUrl()}/api/ask-text`, {
         method: "POST",
         body: formData,
       });

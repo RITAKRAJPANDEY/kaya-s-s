@@ -64,4 +64,25 @@ ehthumbs.db
 scratch/
 *.jpg
 *.png
+*.mp4
+*.avi
+*.mov
+*.glb
+*.ply
+*.obj
+*.crdownload
 test_videos/
+
+# ── SLAM / MUSt3R ─────────────────────────────────────────
+mast3r_env/
+checkpoints/
+slam/frames/
+slam/outputs/
+slam/must3r/frames*/
+slam/must3r/outputs/
+slam/must3r/checkpoints/
+slam/must3r/mast3r_env/
+slam/must3r/build/
+slam/must3r/*.egg-info/
+slam/must3r/*.mp4
+slam/must3r/*.crdownload

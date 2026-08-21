@@ -20,8 +20,8 @@ class Settings(BaseModel):
     DEBOUNCE_HITS: int = 2
 
     # --- Streaming ---
-    VIDEO_RELAY_FPS: int = 15
-    DETECT_INTERVAL: float = 0.3
+    VIDEO_RELAY_FPS: int = 30
+    DETECT_INTERVAL: float = 0.1
 
 
 settings = Settings()

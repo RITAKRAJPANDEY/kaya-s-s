@@ -79,7 +79,16 @@ const SKELETON_BONES: [number, number][] = [
 ];
 
 export default function VisionPage() {
-  const BACKEND_URL = "http://localhost:8001";
+  const [backendUrl, setBackendUrl] = useState<string>("http://localhost:8001");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname || "localhost";
+      setBackendUrl(`http://${host}:8001`);
+    }
+  }, []);
+
+  const BACKEND_URL = backendUrl;
 
   // ── States ────────────────────────────────────────────────────────
   const [activeViewMode, setActiveViewMode] = useState<string>("all");
@@ -853,11 +862,11 @@ export default function VisionPage() {
                     objectFit: "contain",
                     display: "block"
                   }}
-                  onError={(e) => {
-                    e.currentTarget.style.opacity = "0.3";
-                  }}
-                  onLoad={(e) => {
-                    e.currentTarget.style.opacity = "1";
+                  onError={() => {
+                    // Auto-reconnect stream after 1s on temporary glitch
+                    setTimeout(() => {
+                      setStreamCacheBuster(Date.now());
+                    }, 1000);
                   }}
                 />
               )}

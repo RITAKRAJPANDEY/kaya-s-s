@@ -24,7 +24,7 @@ export default function Sidebar() {
   const navItems = [
     { name: "Geofence Map", icon: <Map size={19} />, href: "/geofence" },
     { name: "Live Vision Feed", icon: <Video size={19} />, href: "/vision" },
-    { name: "SLAM Tracking", icon: <Activity size={19} />, href: "/slam" }, 
+    { name: "3D SLAM (MUSt3R)", icon: <Activity size={19} />, href: "/slam" }, 
     { name: "Safety Reports", icon: <FileText size={19} />, href: "/reports" },
     { name: "Phone Broadcaster", icon: <Smartphone size={19} />, href: "/phone" },
   ];

@@ -67,6 +67,11 @@ export default function PhoneBroadcasterPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
+  const isCameraActiveRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    isCameraActiveRef.current = isCameraActive;
+  }, [isCameraActive]);
 
   // Shared Perception & Threat Detection State
   const [activeDetections, setActiveDetections] = useState<ThreatDetection[]>([]);
@@ -79,6 +84,7 @@ export default function PhoneBroadcasterPage() {
   const watchIdRef = useRef<number | null>(null);
   const highRateIntervalRef = useRef<any>(null);
   const streamTickRef = useRef<any>(null);
+  const videoStreamTickRef = useRef<any>(null);
   const simIntervalRef = useRef<any>(null);
   const kalmanRef = useRef<GPSKalmanFilter>(new GPSKalmanFilter(2.5));
   
@@ -252,19 +258,51 @@ export default function PhoneBroadcasterPage() {
     }
   };
 
+  const isHttpSendingRef = useRef<boolean>(false);
+
+  // High-FPS binary JPEG video streamer over direct WebSocket (<15ms latency)
+  const sendVideoFrameWs = () => {
+    if (!isCameraActiveRef.current || !videoRef.current || !captureCanvasRef.current) return;
+    const v = videoRef.current;
+    const c = captureCanvasRef.current;
+    if (v.videoWidth === 0 || v.videoHeight === 0) return;
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const w = 480;
+      const h = Math.round((w * v.videoHeight) / v.videoWidth) || 360;
+      if (c.width !== w || c.height !== h) {
+        c.width = w;
+        c.height = h;
+      }
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      if (ctx) {
+        ctx.drawImage(v, 0, 0, w, h);
+        c.toBlob(
+          (blob) => {
+            if (blob && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              wsRef.current.send(blob);
+            }
+          },
+          "image/jpeg",
+          0.65
+        );
+      }
+    }
+  };
+
   const sendCurrentPose = () => {
     // Use fallback coordinates if GPS hasn't acquired yet (allows IMU-only streaming)
     const latToSend = latestLatRef.current !== null ? latestLatRef.current : (currentLat || 28.6139);
     const lonToSend = latestLonRef.current !== null ? latestLonRef.current : (currentLon || 77.2090);
 
-    // Grab latest camera frame if camera is active
+    // Attach lightweight Base64 JPEG frame snapshot for live dashboard tile rendering
     let cameraFrameBase64: string | undefined = undefined;
-    if (isCameraActive && videoRef.current && captureCanvasRef.current) {
+    if (isCameraActiveRef.current && videoRef.current && captureCanvasRef.current) {
       const v = videoRef.current;
       const c = captureCanvasRef.current;
       if (v.videoWidth > 0 && v.videoHeight > 0) {
-        const w = 480;
-        const h = Math.round((w * v.videoHeight) / v.videoWidth);
+        const w = 360;
+        const h = Math.round((w * v.videoHeight) / v.videoWidth) || 270;
         if (c.width !== w || c.height !== h) {
           c.width = w;
           c.height = h;
@@ -309,13 +347,15 @@ export default function PhoneBroadcasterPage() {
       wsRef.current.send(JSON.stringify(payload));
     }
 
-    // 2. Send via HTTP POST with latency roundtrip measurement
+    // 2. Send via HTTP POST without keepalive (avoid 64KB browser payload limit)
+    if (isHttpSendingRef.current) return;
+    isHttpSendingRef.current = true;
+
     const t0 = Date.now();
     fetch("/api/telemetry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      keepalive: true
+      body: JSON.stringify(payload)
     })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -326,7 +366,7 @@ export default function PhoneBroadcasterPage() {
         setPingLatency(roundtrip);
         setPacketsSent((p) => p + 1);
 
-        // Check if there are active blind-spot alerts for this device (Visual only, no audio/vibration)
+        // Check if there are active blind-spot alerts for this device
         if (data.blind_spot_alerts && data.blind_spot_alerts.length > 0) {
           setBlindSpotAlerts(data.blind_spot_alerts);
         } else {
@@ -337,6 +377,9 @@ export default function PhoneBroadcasterPage() {
         console.warn("Telemetry transmission error:", err);
         setStatus(`Transmission Notice: ${err.message || "Failed to reach server"}`);
         setStatusType("error");
+      })
+      .finally(() => {
+        isHttpSendingRef.current = false;
       });
   };
 
@@ -379,21 +422,26 @@ export default function PhoneBroadcasterPage() {
 
   const startBroadcasting = async () => {
     setIsBroadcasting(true);
-    setStatus("Connecting to Telemetry Hub · Acquiring GPS...");
+    setStatus("Connecting to Telemetry Hub · Acquiring GPS & Camera...");
     setStatusType("active");
 
-    // Unlock sensors on user tap (required for iOS and some Android browsers)
+    // Unlock sensors and auto-start camera on broadcast activation
     requestIosSensors();
+    if (!isCameraActiveRef.current) {
+      startCamera();
+    }
 
-    // Establish WebSocket Connection
+    // Establish Direct High-Speed Binary WebSocket Connection
     try {
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = window.location.hostname;
       const port = "8000";
-      const ws = new WebSocket(`${proto}//${host}:${port}/ws/device`);
+      const ws = new WebSocket(`${proto}//${host}:${port}/ws/stream/${deviceId}`);
+      ws.binaryType = "blob";
 
       ws.onopen = () => {
-        setStatus("Connected to Hub · Live Stream Active");
+        setStatus("🚀 High-Speed 30 FPS WebSocket Stream Active!");
+        setStatusType("active");
       };
       ws.onclose = () => {
         // Fallback gracefully to sub-20ms HTTP SSE
@@ -403,7 +451,12 @@ export default function PhoneBroadcasterPage() {
       console.warn("WebSocket fallback to HTTP:", e);
     }
 
-    // High-Rate Background Broadcast Heartbeat (streams pose every 250ms)
+    // 1. High-FPS Binary Video Frame Streamer (30 FPS binary JPEG over WebSocket)
+    videoStreamTickRef.current = setInterval(() => {
+      sendVideoFrameWs();
+    }, 33);
+
+    // 2. High-Rate Background Broadcast Heartbeat (streams pose every 250ms)
     sendCurrentPose();
     streamTickRef.current = setInterval(() => {
       sendCurrentPose();
@@ -505,6 +558,10 @@ export default function PhoneBroadcasterPage() {
     if (streamTickRef.current) {
       clearInterval(streamTickRef.current);
       streamTickRef.current = null;
+    }
+    if (videoStreamTickRef.current) {
+      clearInterval(videoStreamTickRef.current);
+      videoStreamTickRef.current = null;
     }
     if (simIntervalRef.current) {
       clearInterval(simIntervalRef.current);

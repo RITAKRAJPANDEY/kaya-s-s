@@ -352,6 +352,7 @@ export default function WorksiteGuardDashboard() {
               const existing: LiveCameraTile = next.get(dev.device_id) || {
                 clientId: dev.device_id,
                 name: dev.name || dev.device_id,
+                imageSrc: dev.camera_frame_base64,
                 detections: dev.detections || [],
                 threats: dev.projected_threats || [],
                 threatLevel: dev.detections?.length > 0 ? "danger" : "safe",

@@ -208,6 +208,7 @@ class CopilotBridge:
 
         poses_raw = getattr(result, "poses", []) or []
         poses = list(poses_raw.values()) if isinstance(poses_raw, dict) else poses_raw
+        poses_out = []
         for pose in poses:
             kps = getattr(pose, "keypoints", None)
             if kps is None or len(kps) < 17:
@@ -259,25 +260,40 @@ class CopilotBridge:
 
     async def get_video_frame_stream(self, mode: str = "all"):
         """Async generator yielding MJPEG multipart stream chunks for a specific view mode."""
-        boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
         blank_frame = None
 
         try:
             while True:
                 jpeg = self.get_latest_jpeg(mode=mode)
                 if jpeg is None:
-                    if blank_frame is None:
-                        img = np.zeros((480, 640, 3), dtype=np.uint8)
-                        cv2.putText(
-                            img, "Initializing Safety Copilot...", (80, 240),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA
-                        )
-                        _, buf = cv2.imencode(".jpg", img)
-                        blank_frame = buf.tobytes()
-                    jpeg = blank_frame
+                    # Render sleek high-contrast HUD standby frame
+                    img = np.zeros((480, 640, 3), dtype=np.uint8)
+                    # Add subtle dark tech grid
+                    img[::40, :] = (20, 30, 40)
+                    img[:, ::40] = (20, 30, 40)
+                    
+                    cv2.putText(
+                        img, "KAYA SAFETY COPILOT", (180, 210),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (16, 185, 129), 2, cv2.LINE_AA
+                    )
+                    cv2.putText(
+                        img, "Live Vision Stream Ready - Standby / Active", (140, 255),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 210, 220), 1, cv2.LINE_AA
+                    )
+                    cv2.putText(
+                        img, "Hold [Space] to speak or broadcast from Phone", (135, 295),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 140, 180), 1, cv2.LINE_AA
+                    )
+                    _, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                    jpeg = buf.tobytes()
 
-                yield boundary + jpeg + b"\r\n"
-                await asyncio.sleep(0.016)  # Up to 60 FPS stream
+                header = (
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n"
+                    b"Content-Length: " + str(len(jpeg)).encode("utf-8") + b"\r\n\r\n"
+                )
+                yield header + jpeg + b"\r\n"
+                await asyncio.sleep(0.033)  # ~30 FPS stream for optimal browser rendering
         except (asyncio.CancelledError, GeneratorExit, ConnectionResetError):
             pass
         except Exception as e:

@@ -1,0 +1,2 @@
+include README.md
+recursive-include cython *.pyx *.pxd *.c *.h
