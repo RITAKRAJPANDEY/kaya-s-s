@@ -7,7 +7,7 @@ echo [1/2] Starting Next.js Frontend (Port 3001)...
 start "Kaya Frontend" cmd /k "cd frontend && npm run dev -- -p 3001"
 
 echo [2/2] Starting Python AI Backend (Port 8001)...
-start "Kaya Backend" cmd /k "cd backend && python main.py --no-display"
+start "Kaya Backend" cmd /k "cd backend && if exist .venv\Scripts\python.exe (.venv\Scripts\python.exe -u main.py --no-display) else (python -u main.py --no-display)"
 
 echo.
 echo Both systems are booting up in separate windows!

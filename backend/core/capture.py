@@ -153,16 +153,27 @@ class FrameSource:
             self._cap = cv2.VideoCapture(self._source, cv2.CAP_FFMPEG)
             # Minimise internal buffering for lower latency
             self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        elif self._is_webcam and os.name == "nt":
+            self._cap = cv2.VideoCapture(self._source, cv2.CAP_DSHOW)
         else:
             self._cap = cv2.VideoCapture(self._source)
 
         if not self._cap.isOpened():
-            raise IOError(f"Cannot open video source: {self._source}")
+            if self._is_webcam and os.name == "nt":
+                self._cap = cv2.VideoCapture(self._source)
+            if not self._cap.isOpened():
+                raise IOError(f"Cannot open video source: {self._source}")
 
         if self._is_webcam:
             target_w, target_h = self._resolution
+            try:
+                self._cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+            except Exception:
+                pass
             self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, target_w)
             self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, target_h)
+            if self._max_fps > 0:
+                self._cap.set(cv2.CAP_PROP_FPS, self._max_fps)
         # Note: for streams, resolution is controlled by the server
 
         actual_w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -323,11 +334,18 @@ class FrameSource:
         return self
 
     def __next__(self) -> tuple[np.ndarray, float, int]:
-        try:
-            item = self._frame_queue.get(timeout=10.0)
-        except queue.Empty:
-            raise StopIteration("Frame queue timeout — source may have ended")
-
-        if item is None:
-            raise StopIteration
-        return item
+        while not self._stop_event.is_set():
+            try:
+                item = self._frame_queue.get(timeout=2.0)
+                if item is None:
+                    raise StopIteration
+                return item
+            except queue.Empty:
+                if self._is_video:
+                    # Video file has finished
+                    raise StopIteration("End of video file")
+                if self._capture_thread is None or not self._capture_thread.is_alive():
+                    raise StopIteration("Capture thread has stopped")
+                # For live webcam or streams: continue waiting rather than crashing
+                continue
+        raise StopIteration

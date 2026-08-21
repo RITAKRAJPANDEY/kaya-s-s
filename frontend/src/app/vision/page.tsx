@@ -93,8 +93,12 @@ export default function VisionPage() {
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>("");
-  const [streamCacheBuster, setStreamCacheBuster] = useState<number>(Date.now());
+  const [streamCacheBuster, setStreamCacheBuster] = useState<number>(0);
   const [toasts, setToasts] = useState<{ id: string; msg: string; type: "default" | "success" | "error" }[]>([]);
+
+  useEffect(() => {
+    setStreamCacheBuster(Date.now());
+  }, []);
 
   // ── References ───────────────────────────────────────────────────
   const convFeedRef = useRef<HTMLDivElement | null>(null);

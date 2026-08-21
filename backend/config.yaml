@@ -27,144 +27,49 @@ models:
     confidence: 0.20            # Tuned for high recall on construction and hand tools
     iou: 0.45
     classes:
-      # ---------------- Hand Tools ----------------
+      # Hand & Power Tools
+      - "hammer"
       - "claw hammer"
-      - "rubber mallet"
+      - "power drill"
+      - "cordless drill"
+      - "drill"
+      - "circular saw"
+      - "hand saw"
+      - "saw"
+      - "chainsaw"
       - "screwdriver"
+      - "wrench"
       - "adjustable wrench"
-      - "socket wrench set"
       - "pliers"
       - "wire cutters"
-      - "utility knife"
-      - "hand saw"
-      - "hacksaw"
       - "measuring tape"
       - "spirit level"
-      - "chisel"
-      - "hand file"
-      - "allen key set"
-      - "c-clamp"
-      - "pipe wrench"
-      - "putty knife"
-      - "hand trowel"
-      - "staple gun"
-      - "crowbar"
-      - "bolt cutters"
-
-      # ---------------- Power Tools & Equipment ----------------
-      - "cordless drill"
-      - "impact driver"
       - "angle grinder"
-      - "circular saw"
-      - "reciprocating saw"
-      - "jigsaw"
-      - "table saw"
-      - "miter saw"
-      - "belt sander"
-      - "orbital sander"
       - "nail gun"
       - "jackhammer"
-      - "rotary hammer drill"
-      - "heat gun"
-      - "soldering iron"
-      - "bench grinder"
-      - "air compressor"
-      - "pressure washer"
-      - "chainsaw"
-      - "welding machine"
-      - "welding torch"
-      - "extension cord reel"
-      - "power strip"
+      - "utility knife"
+      - "toolbox"
+      - "tool"
 
-      # ---------------- Personal Protective Equipment (PPE) ----------------
-      - "hard hat"
-      - "safety vest"
-      - "safety glasses"
-      - "safety goggles"
-      - "face shield"
-      - "ear muffs"
-      - "ear plugs"
-      - "dust mask"
-      - "respirator mask"
-      - "work gloves"
-      - "cut-resistant gloves"
-      - "safety boots"
-      - "steel-toe boots"
-      - "knee pads"
-      - "safety harness"
-      - "welding helmet"
-      - "high-visibility jacket"
-
-      # ---------------- Site Infrastructure & Access ----------------
+      # Access & Infrastructure
+      - "ladder"
       - "step ladder"
       - "extension ladder"
       - "scaffolding"
       - "safety cone"
       - "barricade"
-      - "caution tape"
-      - "guardrail"
-      - "warning sign"
-      - "toolbox"
-      - "tool cart"
-      - "storage bin"
-      - "bucket"
       - "wheelbarrow"
-      - "dumpster"
-      - "dolly cart"
-      - "workbench"
-      - "shipping container"
-      - "port-a-potty"
 
-      # ---------------- Heavy Machinery & Vehicles ----------------
+      # Heavy Machinery
       - "forklift"
       - "excavator"
       - "bulldozer"
-      - "backhoe loader"
-      - "cement mixer"
       - "crane"
-      - "dump truck"
-      - "pickup truck"
-      - "skid steer loader"
-      - "road roller"
-      - "scissor lift"
-      - "boom lift"
-      - "concrete pump truck"
-      - "flatbed trailer"
 
-      # ---------------- Materials & Potential Hazards ----------------
-      - "exposed wire"
-      - "cinder block"
-      - "rebar"
-      - "gas cylinder"
-      - "propane tank"
+      # Site Hazards
       - "fire extinguisher"
-      - "wooden pallet"
-      - "spill puddle"
-      - "sandbag"
-      - "lumber stack"
-      - "metal pipe"
-      - "concrete slab"
-      - "electrical panel"
-      - "open manhole"
-      - "debris pile"
-      - "sharp metal shard"
-      - "asbestos warning sign"
-
-      # ---------------- Common Everyday Workplace Objects ----------------
-      - "cell phone"
-      - "laptop"
-      - "clipboard"
-      - "water bottle"
-      - "backpack"
-      - "hard hat with attached radio"
-      - "two-way radio"
-      - "lunch box"
-      - "first aid kit"
-      - "coffee cup"
-      - "folding chair"
-      - "trash can"
-      - "broom"
-      - "dustpan"
+      - "exposed wire"
+      - "gas cylinder"
   depth:
     enabled: true
     path: "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf"
@@ -174,13 +79,13 @@ models:
     scale_factor: 1.0
 # --- Compute Device ---
 device:
-  preferred: "auto"             # auto | mps | cpu (auto uses Apple Silicon MPS if available)
+  preferred: "cuda"             # auto | cuda | mps | cpu (auto uses CUDA if available)
 
 # --- Video Capture ---
 capture:
   webcam_id: 0
   resolution: [1280, 720]
-  max_fps: 30
+  max_fps: 60
 
 # --- Multi-Object Tracking ---
 tracking:

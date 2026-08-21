@@ -20,6 +20,7 @@ from pathlib import Path
 warnings.filterwarnings("ignore", message=".*divide by zero encountered in matmul.*")
 warnings.filterwarnings("ignore", message=".*overflow encountered in matmul.*")
 warnings.filterwarnings("ignore", message=".*invalid value encountered in matmul.*")
+warnings.filterwarnings("ignore", message=".*'half' is deprecated.*")
 
 import cv2
 import numpy as np
@@ -320,7 +321,7 @@ class SafetyCopilot:
         self._current_fps = 0.0
 
         # ── Thread Pool for Parallel Inference ────────────────
-        self._executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="model")
+        self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="model")
 
     def run(self, source, no_display: bool = False, no_voice: bool = False) -> None:
         """Run the main processing loop.
@@ -343,6 +344,13 @@ class SafetyCopilot:
         )
 
         self._running = True
+        logger.info("Warming up GPU models for low-latency inference...")
+        try:
+            self.detector.warmup()
+            self.pose_estimator.warmup()
+        except Exception as e:
+            logger.debug("Warmup error: %s", e)
+
         logger.info("Starting Safety Copilot pipeline...")
 
         try:
@@ -352,6 +360,9 @@ class SafetyCopilot:
                         break
 
                     result = self._process_frame(frame, timestamp, frame_number)
+                    if frame_number % 30 == 0:
+                        logger.info("⚡ Frame %d processed | FPS: %.1f | Detections: %d | Hazards: %d", 
+                                    frame_number, self._current_fps, len(result.detections), len(result.hazards))
 
                     # ── Display ───────────────────────────────
                     if not no_display:
@@ -398,13 +409,11 @@ class SafetyCopilot:
             self.hazard_analyzer.resolution = (w, h)
             self.attention_tracker.resolution = (w, h)
 
-        # ── 1. Detection + Tracking (main thread — tracker is stateful) ──
-        detections = self.detector.detect_and_track(frame)
-
-        # ── 2. Submit parallel tasks for pose, depth, and tools ──
-        # Submit tool detection (every 2nd frame, downscaled to 640px)
+        # ── 1. Submit parallel inference across models ──
+        # Submit PPE detection, tool detection, and pose estimation in parallel
+        ppe_future = self._executor.submit(self.detector.detect_ppe, frame)
         tool_future = self._executor.submit(
-            self.detector.detect_tools, frame, frame_number, 2, True
+            self.detector.detect_tools, frame, frame_number, 4, True
         )
 
         person_tracks = {
@@ -413,21 +422,27 @@ class SafetyCopilot:
             if obj.class_name == "person" and obj.is_active
         }
 
-        # Submit pose estimation (runs every Nth frame internally)
         pose_future = self._executor.submit(
             self.pose_estimator.estimate, frame, frame_number, person_tracks
         )
+
+        # Main thread runs general model tracking
+        general_detections = self.detector.detect_general_tracked(frame)
 
         # Non-blocking async depth submission (every 10 frames)
         if self.depth_estimator.enabled and frame_number % 10 == 0:
             self.depth_estimator.submit_async(frame)
 
-        # ── 3. Gather parallel results ────────────────────────
+        # ── 2. Gather parallel results ──
         poses = pose_future.result()
-
+        ppe_detections = ppe_future.result()
         tool_detections = tool_future.result()
+
+        all_detections = list(general_detections) + list(ppe_detections)
         if tool_detections:
-            detections = self.detector._deduplicate(detections + tool_detections)
+            all_detections.extend(tool_detections)
+
+        detections = self.detector.deduplicate(all_detections)
 
         # Update tracked objects from all detections (persons, vehicles, tools, objects)
         self._update_tracked_objects(detections, timestamp)
@@ -457,30 +472,15 @@ class SafetyCopilot:
             timestamp=timestamp,
         )
 
-        # ── 5. VLM Hook (Part 2 — Manual Escalation) ────────
+        # ── 5. VLM Hook (Non-Blocking Asynchronous Escalation) ────────
         for hazard in hazards:
             if hazard.is_escalated and self.vlm_hook.is_available():
-                vlm_result = self.vlm_hook.escalate_to_reasoning(
+                self.vlm_hook.escalate_async(
+                    hazard=hazard,
                     frame=frame,
-                    detections=detections,
-                    hazard_context={
-                        "hazard": hazard,
-                        "worker_ppe": worker_ppe.get(hazard.worker_track_id),
-                    },
-                    frame_result=FrameResult(
-                        frame_number=frame_number,
-                        timestamp=timestamp,
-                        detections=detections,
-                        poses=poses,
-                        tracked_objects=self._tracked_objects,
-                        worker_ppe_states=worker_ppe,
-                        hazards=hazards,
-                        active_zones=self.zone_manager.get_all_zones() + machine_zones,
-                        fps=self._current_fps,
-                    ),
+                    worker_ppe=worker_ppe.get(hazard.worker_track_id),
+                    frame_number=frame_number,
                 )
-                if vlm_result:
-                    hazard.description = vlm_result
 
         # ── 6. Alert Generation ──────────────────────────────
         alerts = self.alert_manager.process_hazards(hazards, worker_ppe)
@@ -509,7 +509,7 @@ class SafetyCopilot:
             frame_number=frame_number,
             timestamp=timestamp,
             detections=detections,
-            poses=poses,
+            poses=list(poses.values()) if isinstance(poses, dict) else poses,
             tracked_objects=self._tracked_objects,
             worker_ppe_states=worker_ppe,
             hazards=hazards,
@@ -532,7 +532,7 @@ class SafetyCopilot:
                 fps=self._current_fps
             )
         except Exception as e:
-            print(f"BRIDGE ERROR: {e}")
+            logger.exception("BRIDGE ERROR: %s", e)
 
         return result
 
@@ -629,7 +629,7 @@ Keyboard controls (during display):
     )
     parser.add_argument(
         "--device",
-        choices=["auto", "mps", "cpu"],
+        choices=["auto", "cuda", "mps", "cpu"],
         default=None,
         help="Override compute device (default: from config)",
     )
@@ -721,17 +721,41 @@ def main() -> None:
         from app.copilot_bridge import copilot_bridge
         copilot_bridge._running = True  # Signal that main.py is the active video driver
         app_settings = get_settings()
+        from app.main import app as fastapi_app
         def _run_web():
-            uvicorn.run("app.main:app", host=app_settings.host, port=app_settings.port, log_level="warning")
+            uvicorn.run(fastapi_app, host=app_settings.host, port=app_settings.port, log_level="warning")
         web_thread = threading.Thread(target=_run_web, name="FastAPIWebThread", daemon=True)
         web_thread.start()
-        logger.info(f"🚀 Live Web Dashboard active at http://{app_settings.host}:{app_settings.port}")
+        logger.info(f"\U0001f680 Live Web Dashboard active at http://{app_settings.host}:{app_settings.port}")
 
-    copilot.run(
-        source=source,
-        no_display=args.no_display,
-        no_voice=args.no_voice,
-    )
+    try:
+        copilot.run(
+            source=source,
+            no_display=args.no_display,
+            no_voice=args.no_voice,
+        )
+    except IOError as e:
+        logger.error("\u274c Could not open video source: %s", e)
+        logger.warning("CV pipeline is offline. Web dashboard is still running — open http://localhost:8001 to check API status.")
+        if args.web:
+            # Keep process alive so the web server keeps serving
+            logger.info("Keeping web server alive. Press Ctrl+C to exit.")
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                logger.info("Shutdown requested.")
+    except Exception as e:
+        logger.error("\u274c Unexpected error in CV pipeline: %s", e)
+        if args.web:
+            logger.warning("Web server still running. Press Ctrl+C to exit.")
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                logger.info("Shutdown requested.")
+        else:
+            raise
 
 
 if __name__ == "__main__":

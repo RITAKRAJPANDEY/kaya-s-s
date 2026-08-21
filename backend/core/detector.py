@@ -25,7 +25,8 @@ try:
 
     class _UltralyticsSourceFilter(logging.Filter):
         def filter(self, record):
-            return "'source' is missing" not in record.getMessage()
+            msg = record.getMessage()
+            return "'source' is missing" not in msg and "'half' is deprecated" not in msg
 
     ULTRALYTICS_LOGGER.addFilter(_UltralyticsSourceFilter())
 except ImportError:
@@ -220,6 +221,7 @@ class Detector:
         from ultralytics import YOLO
 
         self._device = device
+        self._is_cuda = str(self._device) in ("0", "cuda") or str(self._device).startswith("cuda")
         self._tracker_config = tracker_config
         self._general_conf = general_conf
         self._general_iou = general_iou
@@ -341,31 +343,20 @@ class Detector:
 
         return self._deduplicate(detections)
 
-    def detect_and_track(self, frame: np.ndarray) -> list[Detection]:
-        """Run general and PPE models with tracking enabled.
-
-        Tool detection is performed asynchronously via ``detect_tools``.
-        """
-        detections: list[Detection] = []
-
+    def detect_general_tracked(self, frame: np.ndarray) -> list[Detection]:
+        """Run general COCO model with ByteTrack tracking."""
         if self._general_model is not None:
-            detections.extend(self._run_general_tracked(frame))
-        elif self._ppe_model is not None and not self._ppe_model_is_roboflow:
-            # Fallback tracking on PPE model if general model is absent
-            results = self._ppe_model.track(
-                source=frame,
-                device=self._device,
-                conf=self._ppe_conf,
-                iou=self._ppe_iou,
-                verbose=False,
-                persist=True,
-                tracker=self._tracker_config,
-            )
-            detections.extend(self._parse_consolidated_results(results, with_tracking=True))
+            return self._run_general_tracked(frame)
+        return []
 
-        if self._ppe_model is not None and self._general_model is not None:
-            detections.extend(self._run_ppe(frame))
+    def detect_ppe(self, frame: np.ndarray) -> list[Detection]:
+        """Run PPE detection model."""
+        if self._ppe_model is not None:
+            return self._run_ppe(frame)
+        return []
 
+    def deduplicate(self, detections: list[Detection]) -> list[Detection]:
+        """Deduplicate detections across models."""
         return self._deduplicate(detections)
 
     def detect_tools(
@@ -402,8 +393,8 @@ class Detector:
             device=self._device,
             conf=self._tool_conf,
             iou=self._tool_iou,
-            half=(self._device != "cpu"),
             verbose=False,
+            half=self._is_cuda,
         )
         raw_detections = self._parse_tool_results(tool_results, with_tracking=False)
 
@@ -479,9 +470,9 @@ class Detector:
             device=self._device,
             conf=self._general_conf,
             iou=self._general_iou,
-            half=(self._device != "cpu"),
             verbose=False,
             classes=self._allowed_coco_ids,
+            half=self._is_cuda,
         )
         return self._parse_general_results(results, with_tracking=False)
 
@@ -492,11 +483,11 @@ class Detector:
             device=self._device,
             conf=self._general_conf,
             iou=self._general_iou,
-            half=(self._device != "cpu"),
             verbose=False,
             classes=self._allowed_coco_ids,
             persist=True,
             tracker=self._tracker_config,
+            half=self._is_cuda,
         )
         return self._parse_general_results(results, with_tracking=True)
 
@@ -602,8 +593,8 @@ class Detector:
             device=self._device,
             conf=self._ppe_conf,
             iou=self._ppe_iou,
-            half=(self._device != "cpu"),
             verbose=False,
+            half=self._is_cuda,
         )
 
         detections: list[Detection] = []
@@ -707,3 +698,24 @@ class Detector:
                     )
                 )
         return detections
+
+    def warmup(self) -> None:
+        """Run a single dummy inference to initialize CUDA context / kernels."""
+        dummy = np.zeros((384, 640, 3), dtype=np.uint8)
+        try:
+            if self._general_model is not None:
+                self._run_general(dummy)
+            if self._ppe_model is not None and not self._ppe_model_is_roboflow:
+                self._run_ppe(dummy)
+            if self._tool_model is not None:
+                self._tool_model.predict(
+                    source=dummy,
+                    device=self._device,
+                    conf=self._tool_conf,
+                    verbose=False,
+                    half=self._is_cuda,
+                )
+            logger.info("✅ Detector models warmed up successfully on device '%s'", self._device)
+        except Exception as e:
+            logger.debug("Detector warmup exception (non-fatal): %s", e)
+

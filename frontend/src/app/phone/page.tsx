@@ -47,6 +47,7 @@ export default function PhoneBroadcasterPage() {
   const [roll, setRoll] = useState<number | null>(null);
   const [hasImuSupport, setHasImuSupport] = useState(false);
   const [needsIosPermission, setNeedsIosPermission] = useState(false);
+  const [imuSource, setImuSource] = useState<string>("Waiting for motion...");
 
   // Device & Network State
   const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
@@ -119,49 +120,48 @@ export default function PhoneBroadcasterPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const handleOrientation = (e: DeviceOrientationEvent) => {
+    const handleOrientation = (e: any) => {
       setHasImuSupport(true);
       let calculatedHeading: number | null = null;
 
-      // iOS WebKit compass heading
-      if ((e as any).webkitCompassHeading !== undefined) {
-        calculatedHeading = (e as any).webkitCompassHeading;
-      } else if (e.alpha !== null) {
+      // iOS WebKit compass heading (True North or Magnetic North)
+      if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+        calculatedHeading = e.webkitCompassHeading;
+        setImuSource("iOS Compass Hardware");
+      } else if (e.alpha !== null && e.alpha !== undefined) {
         // Android / standard (alpha: 0-360)
         calculatedHeading = (360 - e.alpha) % 360;
+        setImuSource(e.absolute ? "Android Absolute Compass" : "Gyroscope Orientation");
       }
 
-      if (calculatedHeading !== null) {
+      if (calculatedHeading !== null && !isNaN(calculatedHeading)) {
         const rounded = Math.round(calculatedHeading);
         setHeading(rounded);
         latestHeadingRef.current = rounded;
       }
-      if (e.beta !== null) {
+      if (e.beta !== null && e.beta !== undefined && !isNaN(e.beta)) {
         const p = Math.round(e.beta);
         setPitch(p);
         latestPitchRef.current = p;
       }
-      if (e.gamma !== null) {
+      if (e.gamma !== null && e.gamma !== undefined && !isNaN(e.gamma)) {
         const r = Math.round(e.gamma);
         setRoll(r);
         latestRollRef.current = r;
       }
     };
 
-    const win = window as any;
-    if ("ondeviceorientationabsolute" in win) {
-      win.addEventListener("deviceorientationabsolute", handleOrientation, true);
-    } else if ("ondeviceorientation" in win) {
-      win.addEventListener("deviceorientation", handleOrientation, true);
-    }
+    // Attach BOTH listeners for maximum compatibility
+    window.addEventListener("deviceorientation", handleOrientation, true);
+    window.addEventListener("deviceorientationabsolute" as any, handleOrientation, true);
 
     return () => {
-      win.removeEventListener("deviceorientationabsolute", handleOrientation);
-      win.removeEventListener("deviceorientation", handleOrientation);
+      window.removeEventListener("deviceorientation", handleOrientation, true);
+      window.removeEventListener("deviceorientationabsolute" as any, handleOrientation, true);
     };
   }, []);
 
-  // Request iOS 13+ DeviceOrientation permission
+  // Request iOS 13+ DeviceOrientation permission or unlock sensors on tap
   const requestIosSensors = async () => {
     if (
       typeof (DeviceOrientationEvent as any) !== "undefined" &&
@@ -171,13 +171,15 @@ export default function PhoneBroadcasterPage() {
         const response = await (DeviceOrientationEvent as any).requestPermission();
         if (response === "granted") {
           setNeedsIosPermission(false);
-          setStatus("iOS Motion & IMU permissions granted!");
+          setStatus("Motion & IMU permissions granted!");
         } else {
           alert("Motion sensor permission was denied. Heading won't be streamed.");
         }
       } catch (err: any) {
         console.error("iOS sensor permission error:", err);
       }
+    } else {
+      setStatus("Sensor listeners activated!");
     }
   };
 
@@ -206,16 +208,18 @@ export default function PhoneBroadcasterPage() {
   };
 
   const sendCurrentPose = () => {
-    if (latestLatRef.current === null || latestLonRef.current === null) return;
+    // Use fallback coordinates if GPS hasn't acquired yet (allows IMU-only streaming)
+    const latToSend = latestLatRef.current !== null ? latestLatRef.current : (currentLat || 28.6139);
+    const lonToSend = latestLonRef.current !== null ? latestLonRef.current : (currentLon || 77.2090);
 
     const payload = {
       device_id: deviceId,
       agent_id: deviceId,
       name: deviceId,
       type: "phone",
-      lat: latestLatRef.current,
-      lon: latestLonRef.current,
-      altitude: latestAltitudeRef.current,
+      lat: latToSend,
+      lon: lonToSend,
+      altitude: latestAltitudeRef.current || 0,
       heading: latestHeadingRef.current,
       heading_deg: latestHeadingRef.current,
       pitch: latestPitchRef.current,
@@ -223,7 +227,7 @@ export default function PhoneBroadcasterPage() {
       roll: latestRollRef.current,
       camera_hfov_deg: 68,
       detections: activeDetectionsRef.current,
-      accuracy_m: latestAccuracyRef.current,
+      accuracy_m: latestAccuracyRef.current || (latestLatRef.current ? 5 : 50),
       speed_mps: latestSpeedRef.current,
       altitude_m: latestAltitudeRef.current,
       battery: batteryLevel,
@@ -308,6 +312,9 @@ export default function PhoneBroadcasterPage() {
     setIsBroadcasting(true);
     setStatus("Connecting to Telemetry Hub · Acquiring GPS...");
     setStatusType("active");
+
+    // Unlock sensors on user tap (required for iOS and some Android browsers)
+    requestIosSensors();
 
     // Establish WebSocket Connection
     try {
@@ -731,7 +738,7 @@ export default function PhoneBroadcasterPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <div>
                 <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
-                  Heading (Compass)
+                  Heading ({imuSource})
                 </div>
                 <div style={{ fontSize: "22px", fontWeight: 800, color: "var(--emerald-dark)", fontFamily: "'JetBrains Mono', monospace" }}>
                   {heading !== null ? `${heading}°` : "0°"}

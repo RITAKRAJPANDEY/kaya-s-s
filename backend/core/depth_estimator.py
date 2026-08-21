@@ -26,14 +26,14 @@ class DepthEstimator:
 
         # Device selection
         if device_override:
-            self.device = device_override
-        else:
-            if torch.cuda.is_available():
+            dev_str = str(device_override).lower()
+            if dev_str in ("0", "cuda") or dev_str.startswith("cuda:"):
                 self.device = "cuda"
-            elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-                self.device = "mps"
             else:
-                self.device = "cpu"
+                self.device = "cpu" if dev_str == "cpu" else str(device_override)
+        else:
+            from core.device import get_device
+            self.device = get_device("auto")
 
         logger.info(
             "Loading monocular depth estimation model '%s' (metric=%s) on device '%s'...",
@@ -122,7 +122,7 @@ class DepthEstimator:
             else:
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-            with torch.no_grad():
+            with torch.inference_mode():
                 outputs = self.model(**inputs)
                 predicted_depth = outputs.predicted_depth
 

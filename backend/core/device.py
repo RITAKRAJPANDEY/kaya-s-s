@@ -42,11 +42,17 @@ def get_device(preferred: str = "auto", for_ultralytics: bool = False) -> str:
                 gpu_name = torch.cuda.get_device_name(0)
                 logger.info("✅ CUDA device passed smoke test — using NVIDIA GPU: %s", gpu_name)
                 return "0" if for_ultralytics else "cuda"
-            except Exception as e:
-                logger.warning("CUDA available but smoke test failed: %s — falling back", e)
+            except (RuntimeError, Exception) as e:
+                gpu_name = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "Unknown GPU"
+                logger.warning(
+                    "CUDA smoke test dispatch failed (%s). GPU '%s' architecture is not supported by installed PyTorch binary — falling back to CPU.",
+                    e, gpu_name
+                )
+                # Fall back instead of returning CUDA device index
         else:
             if preferred == "cuda":
                 logger.warning("CUDA explicitly requested but not available")
+
 
     # 2. Attempt MPS (Apple Silicon Metal Performance Shaders)
     if preferred in ("auto", "mps"):

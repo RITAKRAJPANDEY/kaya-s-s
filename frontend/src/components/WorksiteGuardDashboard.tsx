@@ -338,9 +338,46 @@ export default function WorksiteGuardDashboard() {
 
     connectDashboardWs();
 
+    // Ingest telemetry & camera feeds from phone broadcaster via Next.js SSE Stream
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource("/api/telemetry/stream");
+      eventSource.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === "update" && data.device) {
+            const dev = data.device;
+            setActiveTiles(prev => {
+              const next = new Map(prev);
+              const existing: LiveCameraTile = next.get(dev.device_id) || {
+                clientId: dev.device_id,
+                name: dev.name || dev.device_id,
+                detections: dev.detections || [],
+                threats: dev.projected_threats || [],
+                threatLevel: dev.detections?.length > 0 ? "danger" : "safe",
+                lastFrameTime: Date.now(),
+                frameWidth: 480,
+                frameHeight: 360
+              };
+              if (dev.camera_frame_base64) {
+                existing.imageSrc = dev.camera_frame_base64;
+              }
+              existing.threats = dev.projected_threats || [];
+              existing.detections = dev.detections || [];
+              existing.threatLevel = dev.detections?.length > 0 ? "danger" : "safe";
+              existing.lastFrameTime = Date.now();
+              next.set(dev.device_id, existing);
+              return next;
+            });
+          }
+        } catch {}
+      };
+    } catch {}
+
     return () => {
       isMounted = false;
       if (wsDashRef.current) wsDashRef.current.close();
+      if (eventSource) eventSource.close();
     };
   }, [drawDetections, triggerGlobalBanner]);
 

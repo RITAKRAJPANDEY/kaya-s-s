@@ -59,6 +59,7 @@ export interface DeviceTelemetry {
   fov_polygon?: [number, number][]; // Computed FOV vision cone polygon
   projected_threats?: ThreatDetection[];
   blind_spot_alerts?: BlindSpotAlert[];
+  camera_frame_base64?: string; // Live JPEG frame snapshot from phone camera
 }
 
 export interface SimulationProfile {

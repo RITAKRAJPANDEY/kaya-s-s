@@ -1314,6 +1314,40 @@ export default function GeofenceDashboardPage() {
                     </div>
                   </div>
 
+                  {/* Live Phone Camera Video Feed (if streaming) */}
+                  {currentDevice.camera_frame_base64 && (
+                    <div style={{
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                      border: "1.5px solid var(--emerald-primary)",
+                      backgroundColor: "#000000",
+                      position: "relative"
+                    }}>
+                      <img 
+                        src={currentDevice.camera_frame_base64} 
+                        alt="Live Phone Feed" 
+                        style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} 
+                      />
+                      <div style={{
+                        position: "absolute",
+                        top: "6px",
+                        left: "6px",
+                        backgroundColor: "rgba(0,0,0,0.7)",
+                        color: "#10b981",
+                        fontSize: "9px",
+                        fontWeight: 800,
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px"
+                      }}>
+                        <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "#10b981" }} className="pulse-active" />
+                        <span>LIVE PHONE CAM</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 2D Kalman Filter Active Indicator */}
                   <div style={{
                     padding: "6px 8px",

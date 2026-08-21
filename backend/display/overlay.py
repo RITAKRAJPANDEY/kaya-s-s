@@ -406,7 +406,8 @@ class OverlayRenderer:
 
         # 3. Pose skeletons
         if self.show_keypoints:
-            for pose in result.poses:
+            pose_list = list(result.poses.values()) if isinstance(result.poses, dict) else (result.poses or [])
+            for pose in pose_list:
                 self._draw_skeleton(out, pose.keypoints)
                 if self.show_gaze_lines and pose.head_yaw is not None:
                     self._draw_gaze_line(out, pose)
@@ -435,7 +436,8 @@ class OverlayRenderer:
         # Pure black background — skeleton only, no video
         out = np.zeros((h, w, 3), dtype=np.uint8)
 
-        for pose in result.poses:
+        pose_list = list(result.poses.values()) if isinstance(result.poses, dict) else (result.poses or [])
+        for pose in pose_list:
             if pose.keypoints is None or len(pose.keypoints) < 17:
                 continue
 
@@ -710,7 +712,8 @@ class OverlayRenderer:
         if not tool_targets:
             return
 
-        poses_by_track = {pose.person_track_id: pose for pose in result.poses}
+        pose_list = list(result.poses.values()) if isinstance(result.poses, dict) else (result.poses or [])
+        poses_by_track = {getattr(pose, "person_track_id", None): pose for pose in pose_list}
 
         for worker in workers:
             pose = poses_by_track.get(worker.track_id)

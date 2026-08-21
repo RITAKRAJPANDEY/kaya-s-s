@@ -83,6 +83,7 @@ class PoseEstimator:
         from ultralytics import YOLO
 
         self._device = device
+        self._is_cuda = str(self._device) in ("0", "cuda") or str(self._device).startswith("cuda")
         self._confidence = confidence
         self._run_every_n = max(1, run_every_n)
 
@@ -91,13 +92,29 @@ class PoseEstimator:
         )
         self._model = YOLO(model_path)
         logger.info(
-            "Pose model loaded (run_every_n=%d, confidence=%.2f)",
+            "Pose model loaded (run_every_n=%d, confidence=%.2f, cuda=%s)",
             self._run_every_n,
             self._confidence,
+            self._is_cuda,
         )
 
         # Cache for skipped frames
         self._cached_poses: list[PoseData] = []
+
+    def warmup(self) -> None:
+        """Run a single dummy inference to initialize CUDA context."""
+        dummy = np.zeros((384, 640, 3), dtype=np.uint8)
+        try:
+            self._model.predict(
+                source=dummy,
+                device=self._device,
+                conf=self._confidence,
+                verbose=False,
+                half=self._is_cuda,
+            )
+            logger.info("✅ Pose model warmed up successfully on device '%s'", self._device)
+        except Exception as e:
+            logger.debug("Pose warmup exception (non-fatal): %s", e)
 
     # ── Public API ────────────────────────────────────────────
 
@@ -127,8 +144,8 @@ class PoseEstimator:
             source=frame,
             device=self._device,
             conf=self._confidence,
-            half=(self._device != "cpu"),
             verbose=False,
+            half=self._is_cuda,
         )
 
         poses: list[PoseData] = []

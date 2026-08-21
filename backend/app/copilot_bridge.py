@@ -85,12 +85,18 @@ class CopilotBridge:
                 hazards_cnt = len(hazards)
 
                 for obj in list(tracked_objects.values())[:6]:
-                    dist_str = f"{obj.distance_meters:.1f}m" if getattr(obj, "distance_meters", None) else "N/A"
-                    status = "Safe"
-                    if getattr(obj, "distance_meters", 10.0) < 1.0:
-                        status = "Critical"
-                    elif getattr(obj, "distance_meters", 10.0) < 2.5:
-                        status = "Warning"
+                    dist_m = getattr(obj, "distance_meters", None)
+                    if dist_m is not None and isinstance(dist_m, (int, float)):
+                        dist_str = f"{dist_m:.1f}m"
+                        if dist_m < 1.0:
+                            status = "Critical"
+                        elif dist_m < 2.5:
+                            status = "Warning"
+                        else:
+                            status = "Safe"
+                    else:
+                        dist_str = "N/A"
+                        status = "Safe"
                         
                     summary_list.append({
                         "id": str(getattr(obj, "track_id", "unknown")),
@@ -102,14 +108,20 @@ class CopilotBridge:
 
                 hazards_list = []
                 for hazard in getattr(frame_result, "hazards", []):
+                    sev = getattr(hazard, "severity", "WARNING")
+                    sev_str = getattr(sev, "value", str(sev))
+                    hid = getattr(hazard, "hazard_id", getattr(hazard, "id", "unknown"))
+                    htype = getattr(hazard, "hazard_type", getattr(hazard, "type", "Unknown Hazard"))
+                    hdesc = getattr(hazard, "description", "")
                     hazards_list.append({
-                        "id": str(getattr(hazard, "id", "unknown")),
-                        "type": getattr(hazard, "type", "Unknown Hazard"),
-                        "description": getattr(hazard, "description", ""),
-                        "severity": getattr(hazard, "severity", "WARNING").upper()
+                        "id": str(hid),
+                        "type": str(htype),
+                        "description": str(hdesc),
+                        "severity": str(sev_str).upper()
                     })
 
             with self._lock:
+                self._running = True
                 self._latest_jpeg = jpeg_bytes
                 self._latest_raw_frame = raw_frame.copy() if raw_frame is not None else None
                 self._latest_result = frame_result
@@ -138,7 +150,7 @@ class CopilotBridge:
                     ]
 
         except Exception as e:
-            logger.debug(f"Error in CopilotBridge.update_frame: {e}")
+            logger.exception(f"Error in CopilotBridge.update_frame: {e}")
 
     def get_latest_jpeg(self, mode: str = "all") -> Optional[bytes]:
         """Return the latest frame JPEG bytes rendered in the selected view mode."""
@@ -194,10 +206,10 @@ class CopilotBridge:
         if result is None:
             return {"poses": [], "frame_width": 1280, "frame_height": 720}
 
-        poses_out = []
-        poses = getattr(result, "poses", []) or []
+        poses_raw = getattr(result, "poses", []) or []
+        poses = list(poses_raw.values()) if isinstance(poses_raw, dict) else poses_raw
         for pose in poses:
-            kps = pose.keypoints
+            kps = getattr(pose, "keypoints", None)
             if kps is None or len(kps) < 17:
                 continue
             kp_list = []
@@ -234,7 +246,7 @@ class CopilotBridge:
     def get_status(self) -> Dict[str, Any]:
         """Return current status of the copilot bridge."""
         with self._lock:
-            is_active = self._running and (time.time() - self._latest_timestamp < 3.0)
+            is_active = (time.time() - self._latest_timestamp < 4.0) and (self._latest_timestamp > 0)
             return {
                 "active": is_active,
                 "fps": round(self._fps, 1),
@@ -250,21 +262,26 @@ class CopilotBridge:
         boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
         blank_frame = None
 
-        while True:
-            jpeg = self.get_latest_jpeg(mode=mode)
-            if jpeg is None:
-                if blank_frame is None:
-                    img = np.zeros((480, 640, 3), dtype=np.uint8)
-                    cv2.putText(
-                        img, "Initializing Safety Copilot...", (80, 240),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA
-                    )
-                    _, buf = cv2.imencode(".jpg", img)
-                    blank_frame = buf.tobytes()
-                jpeg = blank_frame
+        try:
+            while True:
+                jpeg = self.get_latest_jpeg(mode=mode)
+                if jpeg is None:
+                    if blank_frame is None:
+                        img = np.zeros((480, 640, 3), dtype=np.uint8)
+                        cv2.putText(
+                            img, "Initializing Safety Copilot...", (80, 240),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA
+                        )
+                        _, buf = cv2.imencode(".jpg", img)
+                        blank_frame = buf.tobytes()
+                    jpeg = blank_frame
 
-            yield boundary + jpeg + b"\r\n"
-            await asyncio.sleep(0.033)  # ~30 FPS stream
+                yield boundary + jpeg + b"\r\n"
+                await asyncio.sleep(0.016)  # Up to 60 FPS stream
+        except (asyncio.CancelledError, GeneratorExit, ConnectionResetError):
+            pass
+        except Exception as e:
+            logger.debug(f"Video stream client disconnected: {e}")
 
     def start_background_copilot(
         self,
