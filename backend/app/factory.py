@@ -149,6 +149,19 @@ def get_knowledge_retriever(settings: Settings):
             knowledge_dir=settings.knowledge_dir,
         )
 
+    if provider_type == "hindsight":
+        from app.providers.rag.hindsight_rag import HindsightKnowledgeRetriever
+        if not settings.hindsight_url:
+            logger.warning("HINDSIGHT_URL not configured. Hindsight RAG will not be available.")
+            return None
+        logger.info(f"Using Hindsight Knowledge Retriever (bank: {settings.hindsight_bank_id}).")
+        return HindsightKnowledgeRetriever(
+            hindsight_url=settings.hindsight_url,
+            hindsight_api_key=settings.hindsight_api_key,
+            bank_id=settings.hindsight_bank_id,
+            default_top_k=settings.rag_top_k,
+        )
+
     raise ValueError(f"Unsupported RAG provider: '{settings.rag_provider}'")
 
 

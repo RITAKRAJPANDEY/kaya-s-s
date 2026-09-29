@@ -17,11 +17,14 @@ import {
   Play, 
   Volume2, 
   Sparkles, 
-  BookOpen, 
-  Clock, 
+  BookOpen,
+  Clock,
   SlidersHorizontal,
   ChevronRight,
-  Activity
+  ChevronDown,
+  Activity,
+  Brain,
+  Loader2
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -49,6 +52,12 @@ interface ChatMessage {
   ragUsed?: boolean;
   ragSources?: (string | RAGSource)[];
   audioBase64?: string;
+}
+
+interface PlaybookState {
+  available: boolean;
+  content?: string;
+  message?: string;
 }
 
 interface SystemStatus {
@@ -104,6 +113,8 @@ export default function VisionPage() {
   const [inputText, setInputText] = useState<string>("");
   const [streamCacheBuster, setStreamCacheBuster] = useState<number>(0);
   const [toasts, setToasts] = useState<{ id: string; msg: string; type: "default" | "success" | "error" }[]>([]);
+  const [playbook, setPlaybook] = useState<PlaybookState>({ available: false });
+  const [playbookOpen, setPlaybookOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setStreamCacheBuster(Date.now());
@@ -161,6 +172,33 @@ export default function VisionPage() {
 
     fetchStatus();
     const interval = setInterval(fetchStatus, 2000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [BACKEND_URL]);
+
+  // ── Hindsight Site Safety Playbook Polling ─────────────────────────
+  // The playbook is a Hindsight mental model that auto-refreshes as new
+  // hazards/turns are retained — this is the "agent gets smarter over time"
+  // surface. Polling stays cheap even when unavailable: the backend returns
+  // { available: false } instantly for non-Hindsight RAG providers.
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPlaybook = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/knowledge/playbook`);
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          setPlaybook(data);
+        }
+      } catch {
+        // Backend offline / connecting
+      }
+    };
+
+    fetchPlaybook();
+    const interval = setInterval(fetchPlaybook, 15000);
     return () => {
       isMounted = false;
       clearInterval(interval);
@@ -1060,10 +1098,81 @@ export default function VisionPage() {
                   Kaya Safety Copilot
                 </span>
               </div>
-              <span style={{ fontSize: "11px", fontWeight: 700, color: "#64748b" }}>
-                {messages.length} message{messages.length !== 1 ? "s" : ""}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                {playbook.available && (
+                  <button
+                    onClick={() => setPlaybookOpen((v) => !v)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "4px 9px",
+                      borderRadius: "6px",
+                      border: playbookOpen ? "1px solid #a78bfa" : "1px solid #e9d5ff",
+                      backgroundColor: playbookOpen ? "#ede9fe" : "#faf5ff",
+                      color: "#7e22ce",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      cursor: "pointer"
+                    }}
+                    title="Site Safety Playbook — auto-updating memory (Hindsight)"
+                  >
+                    <Brain size={12} />
+                    Playbook
+                    <ChevronDown
+                      size={12}
+                      style={{ transform: playbookOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }}
+                    />
+                  </button>
+                )}
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "#64748b" }}>
+                  {messages.length} message{messages.length !== 1 ? "s" : ""}
+                </span>
+              </div>
             </div>
+
+            {/* Site Safety Playbook — auto-refreshing Hindsight mental model */}
+            {playbook.available && playbookOpen && (
+              <div style={{
+                padding: "12px 18px",
+                backgroundColor: "#faf5ff",
+                borderBottom: "1px solid #e9d5ff",
+                flexShrink: 0
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Brain size={13} style={{ color: "#7e22ce" }} />
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#581c87", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                      Site Safety Playbook
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#a855f7" }}>
+                    Auto-updating from Hindsight memory
+                  </span>
+                </div>
+                <div style={{
+                  maxHeight: "160px",
+                  overflowY: "auto",
+                  fontSize: "12px",
+                  lineHeight: 1.6,
+                  color: "#3b0764",
+                  whiteSpace: "pre-wrap",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e9d5ff",
+                  borderRadius: "8px",
+                  padding: "10px 12px"
+                }}>
+                  {!playbook.content || playbook.content.includes("Generating") ? (
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", color: "#a855f7", fontStyle: "italic" }}>
+                      <Loader2 size={12} className="animate-spin" />
+                      Still learning — synthesizing recurring hazard patterns from site memory...
+                    </span>
+                  ) : (
+                    playbook.content
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Quick Suggestion Chips */}
             <div style={{

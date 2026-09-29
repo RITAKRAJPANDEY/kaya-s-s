@@ -493,6 +493,26 @@ class SafetyCopilot:
             ):
                 self.event_logger.log_hazard(hazard, frame_number)
 
+                # Also retain into Hindsight permanent memory, fire-and-forget on the
+                # existing thread pool (never blocks the live CV loop). The retriever is
+                # only present when RAG_PROVIDER=hindsight; hasattr() keeps this a no-op
+                # for every other provider.
+                try:
+                    from app.main import pipeline as _kaya_pipeline
+                    retriever = _kaya_pipeline.knowledge_retriever
+                    if retriever is not None and hasattr(retriever, "retain_hazard_sync"):
+                        self._executor.submit(
+                            retriever.retain_hazard_sync,
+                            hazard_type=hazard.hazard_type,
+                            severity=hazard.severity.value,
+                            zone=hazard.zone_name,
+                            description=hazard.description,
+                            distance_meters=hazard.distance_meters,
+                            source="local_cv",
+                        )
+                except Exception as ex:
+                    logger.debug("Hindsight hazard retention skipped: %s", ex)
+
         for alert in alerts:
             self.event_logger.log_alert(alert, frame_number)
 

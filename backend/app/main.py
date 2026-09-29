@@ -202,6 +202,17 @@ async def get_knowledge_status():
     }
 
 
+@app.get("/api/knowledge/playbook")
+async def get_safety_playbook():
+    """Return the auto-refreshing Hindsight Site Safety Playbook (demo: shows accumulated learning)."""
+    if not pipeline.knowledge_retriever or not hasattr(pipeline.knowledge_retriever, "get_playbook"):
+        return {"available": False, "message": "Hindsight RAG provider not active."}
+    try:
+        return {"available": True, **(await pipeline.knowledge_retriever.get_playbook())}
+    except Exception as e:
+        return {"available": False, "message": str(e)}
+
+
 @app.post("/api/reset")
 async def reset_history():
     """Reset conversational context history."""

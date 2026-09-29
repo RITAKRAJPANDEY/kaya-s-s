@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     vision_provider: Literal["gemini", "nvidia", "ollama", "mock"] = "gemini"
     stt_provider: Literal["sarvam", "gemini", "mock"] = "sarvam"
     tts_provider: Literal["sarvam", "mac", "mock"] = "sarvam"
-    rag_provider: Literal["docling", "gemini", "gemini_file_search", "mock"] = "docling"
+    rag_provider: Literal["docling", "gemini", "gemini_file_search", "mock", "hindsight"] = "docling"
 
 
     # RAG & Knowledge Base Settings
@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     knowledge_manifest_path: str = "knowledge/manifest.json"
     knowledge_vector_store_path: str = "knowledge/vector_store.json"
     gemini_file_search_store_name: str = ""
+
+    # Hindsight Memory Settings
+    hindsight_url: str = ""
+    hindsight_api_key: str = ""
+    hindsight_bank_id: str = "kaya-safety-copilot"
 
 
 
@@ -54,7 +59,7 @@ class Settings(BaseSettings):
     sarvam_tts_model: str = "bulbul:v3"
     sarvam_tts_speaker: str = "shubh"
     sarvam_tts_language_code: str = "en-IN"
-    sarvam_tts_pace: float = 1.4
+    sarvam_tts_pace: float = 1.0
 
     # Ollama Settings
     ollama_base_url: str = "http://localhost:11434"

@@ -33,8 +33,11 @@ class RAGRouter:
         r"\b(document(s|ation)?|protocol(s)?|directive(s)?|regulation(s)?|osha|ansi|astm)\b",
         
         # Compliance & Rule inquiries
-        r"\b(compliant|compliance|non-compliant|violation|violating|authorized|permitted|allowed)\b",
+        r"\b(compliant|compliance|non-compliant|violations?|violating|authorized|permitted|allowed)\b",
         r"\b(require(d|ment|ments)?|standard(s)?|mandatory|rule(s)?|polic(y|ies))\b",
+        # Historical / memory-recall intent — the site's own incident history, not just static docs
+        r"\b(repeat(ed|edly)?|recurring|recur(s|red)?)\b",
+        r"\b(history|historical|record(s)?|logged?|previously|before|in\s+the\s+past|last\s+(week|month|time))\b",
         r"\b(according\s+to\s+(the|our|site|safety)?\s*(manual|rules?|policy|sop|docs?|documents?|guidelines?))\b",
         r"\b(is\s+this\s+(safe|allowed|compliant|permitted|legal|acceptable))\b",
         r"\b(are\s+(these|we|they|workers?)\s+(safe|allowed|compliant|permitted|acceptable))\b",

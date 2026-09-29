@@ -194,6 +194,13 @@ class KayaPipeline:
         # Update in-memory history (isolate RAG context chunks from permanently polluting history)
         self._append_history(question, response_text)
 
+        # Also retain this turn into Hindsight permanent memory (fire-and-forget, never blocks the response)
+        if self.knowledge_retriever and hasattr(self.knowledge_retriever, "retain_turn"):
+            import asyncio
+            asyncio.create_task(self.knowledge_retriever.retain_turn(
+                question=question, answer=response_text,
+            ))
+
         return {
             "transcript": question,
             "response": response_text,

@@ -83,9 +83,10 @@ device:
 
 # --- Video Capture ---
 capture:
-  webcam_id: 0
+  # 1 for OBS Virtual Camera (capturing Instagram video call window)
+  webcam_id: 1
   resolution: [1280, 720]
-  max_fps: 60
+  max_fps: 30
 
 # --- Multi-Object Tracking ---
 tracking:
@@ -108,7 +109,7 @@ fall_detection:
 
 # --- PPE ---
 ppe:
-  standalone_alert: false       # Modulates severity of other hazards
+  standalone_alert: true        # Alert immediately on standalone PPE infractions
 
 # --- Voice Alerts (TTS) ---
 alerts:
